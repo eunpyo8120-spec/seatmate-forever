@@ -19,7 +19,7 @@ import {
 const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
-  const { seatStatuses, reserveSeat, mySeat } = useAppStore();
+  const { seatStatuses, reserveSeat, mySeat, isAdmin, adminCheckoutSeat } = useAppStore();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
 
   const currentFloor = floor || '2';
