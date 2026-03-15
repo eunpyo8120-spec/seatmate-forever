@@ -27,7 +27,14 @@ const SeatsPage = () => {
   const floorName = currentFloor === '2' ? '2층 1열람실' : '4층 2열람실';
 
   const handleSeatClick = (seatNum: number) => {
+    const status = statuses[seatNum];
+    if (isAdmin) {
+      // Admin can select any occupied seat to force checkout, or available to reserve
+      setSelectedSeat(seatNum);
+      return;
+    }
     if (mySeat) return; // already have a seat
+    if (status !== 'available') return;
     setSelectedSeat(seatNum);
   };
 
