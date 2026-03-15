@@ -38,11 +38,19 @@ const SeatsPage = () => {
     setSelectedSeat(seatNum);
   };
 
+  const selectedStatus = selectedSeat !== null ? statuses[selectedSeat] : undefined;
+  const isAdminForceCheckout = isAdmin && selectedStatus === 'occupied';
+
   const confirmReservation = () => {
     if (selectedSeat !== null) {
-      reserveSeat(Number(currentFloor), selectedSeat);
-      setSelectedSeat(null);
-      navigate('/my-seat');
+      if (isAdminForceCheckout) {
+        adminCheckoutSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+      } else if (selectedStatus === 'available') {
+        reserveSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+        navigate('/my-seat');
+      }
     }
   };
 
