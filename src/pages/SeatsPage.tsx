@@ -128,8 +128,8 @@ const SeatsPage = () => {
             <Button variant="outline" onClick={() => setSelectedSeat(null)} className="flex-1">
               취소
             </Button>
-            <Button onClick={confirmReservation} className="flex-1">
-              배정하기
+            <Button onClick={confirmReservation} className="flex-1" variant={isAdminForceCheckout ? 'destructive' : 'default'}>
+              {isAdminForceCheckout ? '강제 퇴실' : '배정하기'}
             </Button>
           </DialogFooter>
         </DialogContent>
