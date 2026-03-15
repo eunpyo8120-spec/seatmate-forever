@@ -19,7 +19,7 @@ import {
 const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
-  const { seatStatuses, reserveSeat, mySeat } = useAppStore();
+  const { seatStatuses, reserveSeat, mySeat, isAdmin, adminCheckoutSeat } = useAppStore();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
 
   const currentFloor = floor || '2';
@@ -27,15 +27,30 @@ const SeatsPage = () => {
   const floorName = currentFloor === '2' ? '2층 1열람실' : '4층 2열람실';
 
   const handleSeatClick = (seatNum: number) => {
+    const status = statuses[seatNum];
+    if (isAdmin) {
+      // Admin can select any occupied seat to force checkout, or available to reserve
+      setSelectedSeat(seatNum);
+      return;
+    }
     if (mySeat) return; // already have a seat
+    if (status !== 'available') return;
     setSelectedSeat(seatNum);
   };
 
+  const selectedStatus = selectedSeat !== null ? statuses[selectedSeat] : undefined;
+  const isAdminForceCheckout = isAdmin && selectedStatus === 'occupied';
+
   const confirmReservation = () => {
     if (selectedSeat !== null) {
-      reserveSeat(Number(currentFloor), selectedSeat);
-      setSelectedSeat(null);
-      navigate('/my-seat');
+      if (isAdminForceCheckout) {
+        adminCheckoutSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+      } else if (selectedStatus === 'available') {
+        reserveSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+        navigate('/my-seat');
+      }
     }
   };
 
@@ -96,17 +111,25 @@ const SeatsPage = () => {
           <DialogHeader>
             <DialogTitle className="font-display">좌석 배정 확인</DialogTitle>
             <DialogDescription className="font-body">
-              {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 배정하시겠습니까?
-              <br />
-              <span className="text-xs text-muted-foreground">이용시간: 4시간 (연장 가능)</span>
+              {isAdminForceCheckout ? (
+                <>
+                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 강제 퇴실 처리하시겠습니까?
+                </>
+              ) : (
+                <>
+                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 배정하시겠습니까?
+                  <br />
+                  <span className="text-xs text-muted-foreground">이용시간: 4시간 (연장 가능)</span>
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
             <Button variant="outline" onClick={() => setSelectedSeat(null)} className="flex-1">
               취소
             </Button>
-            <Button onClick={confirmReservation} className="flex-1">
-              배정하기
+            <Button onClick={confirmReservation} className="flex-1" variant={isAdminForceCheckout ? 'destructive' : 'default'}>
+              {isAdminForceCheckout ? '강제 퇴실' : '배정하기'}
             </Button>
           </DialogFooter>
         </DialogContent>

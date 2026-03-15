@@ -5,6 +5,14 @@ import { BookOpen, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+
+const ALLOWED_IDS: Record<string, { name: string; isAdmin: boolean }> = {
+  '2021099698': { name: '학생_9698', isAdmin: false },
+  '2021026953': { name: '학생_6953', isAdmin: false },
+  '2021005632': { name: '학생_5632', isAdmin: false },
+  '2026': { name: '관리자', isAdmin: true },
+};
 
 const LoginPage = () => {
   const [studentId, setStudentId] = useState('');
@@ -14,9 +22,12 @@ const LoginPage = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (studentId.trim()) {
-      login(studentId, `학생_${studentId.slice(-4)}`);
+    const user = ALLOWED_IDS[studentId.trim()];
+    if (user) {
+      login(studentId.trim(), user.name, user.isAdmin);
       navigate('/main');
+    } else {
+      toast.error('등록되지 않은 학번입니다.');
     }
   };
 
@@ -32,7 +43,8 @@ const LoginPage = () => {
           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
             <BookOpen className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">도서관 좌석 관리</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">한양대에리카</h1>
+          <h2 className="text-lg font-display font-semibold text-foreground mt-1">도서관 좌석관리</h2>
           <p className="text-sm font-body text-muted-foreground mt-1">학번으로 로그인하세요</p>
         </div>
 
@@ -41,7 +53,7 @@ const LoginPage = () => {
             <label className="text-sm font-display font-medium text-foreground">학번</label>
             <Input
               type="text"
-              placeholder="20241234"
+              placeholder="학번을 입력하세요"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               className="h-11"
