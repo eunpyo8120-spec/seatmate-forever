@@ -5,14 +5,16 @@ interface AppState {
   isLoggedIn: boolean;
   userName: string;
   studentId: string;
+  isAdmin: boolean;
   mySeat: { floor: number; seatNumber: number; startTime: Date; endTime: Date } | null;
   seatStatuses: Record<string, Record<number, SeatStatus>>;
   notifications: Notification[];
-  login: (studentId: string, name: string) => void;
+  login: (studentId: string, name: string, isAdmin: boolean) => void;
   logout: () => void;
   reserveSeat: (floor: number, seatNumber: number) => void;
   checkoutSeat: () => void;
   extendSeat: () => void;
+  adminCheckoutSeat: (floor: number, seatNumber: number) => void;
   markNotificationRead: (id: string) => void;
 }
 
@@ -27,7 +29,7 @@ const generateSeatStatuses = (seatIds: number[]): Record<number, SeatStatus> => 
   return statuses;
 };
 
-const floor2Seats = Array.from({ length: 323 }, (_, i) => i + 1);
+const floor2Seats = Array.from({ length: 324 }, (_, i) => i + 1);
 const floor4Seats = Array.from({ length: 218 }, (_, i) => i + 1);
 
 const initialNotifications: Notification[] = [
@@ -40,14 +42,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoggedIn: false,
   userName: '',
   studentId: '',
+  isAdmin: false,
   mySeat: null,
   seatStatuses: {
     '2': generateSeatStatuses(floor2Seats),
     '4': generateSeatStatuses(floor4Seats),
   },
   notifications: initialNotifications,
-  login: (studentId, name) => set({ isLoggedIn: true, studentId, userName: name }),
-  logout: () => set({ isLoggedIn: false, userName: '', studentId: '', mySeat: null }),
+  login: (studentId, name, isAdmin) => set({ isLoggedIn: true, studentId, userName: name, isAdmin }),
+  logout: () => set({ isLoggedIn: false, userName: '', studentId: '', isAdmin: false, mySeat: null }),
   reserveSeat: (floor, seatNumber) => {
     const now = new Date();
     const end = new Date(now.getTime() + 4 * 60 * 60 * 1000);
@@ -97,6 +100,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       };
     });
+  },
+  adminCheckoutSeat: (floor, seatNumber) => {
+    set(state => ({
+      seatStatuses: {
+        ...state.seatStatuses,
+        [String(floor)]: {
+          ...state.seatStatuses[String(floor)],
+          [seatNumber]: 'available' as SeatStatus,
+        },
+      },
+    }));
   },
   markNotificationRead: (id) => {
     set(state => ({
