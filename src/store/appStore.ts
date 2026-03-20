@@ -110,6 +110,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
     }));
   },
+  adminAssignSeat: (floor, seatNumber) => {
+    set(state => ({
+      seatStatuses: {
+        ...state.seatStatuses,
+        [String(floor)]: {
+          ...state.seatStatuses[String(floor)],
+          [seatNumber]: 'occupied' as SeatStatus,
+        },
+      },
+    }));
+  },
   markNotificationRead: (id) => {
     set(state => ({
       notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n),
