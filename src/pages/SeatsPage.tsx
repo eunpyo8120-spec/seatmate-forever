@@ -19,7 +19,7 @@ import {
 const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
-  const { seatStatuses, reserveSeat, mySeat, isAdmin, adminCheckoutSeat } = useAppStore();
+  const { seatStatuses, reserveSeat, mySeat, isAdmin, adminCheckoutSeat, adminAssignSeat } = useAppStore();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
 
   const currentFloor = floor || '2';
@@ -29,8 +29,10 @@ const SeatsPage = () => {
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
     if (isAdmin) {
-      // Admin can select any occupied seat to force checkout, or available to reserve
-      setSelectedSeat(seatNum);
+      // Admin can select any seat (available to assign, occupied to force checkout)
+      if (status === 'available' || status === 'occupied' || status === 'mine') {
+        setSelectedSeat(seatNum);
+      }
       return;
     }
     if (mySeat) return; // already have a seat
@@ -39,12 +41,17 @@ const SeatsPage = () => {
   };
 
   const selectedStatus = selectedSeat !== null ? statuses[selectedSeat] : undefined;
-  const isAdminForceCheckout = isAdmin && selectedStatus === 'occupied';
+  const isAdminForceCheckout = isAdmin && (selectedStatus === 'occupied' || selectedStatus === 'mine');
+  const isAdminAssign = isAdmin && selectedStatus === 'available';
 
   const confirmReservation = () => {
     if (selectedSeat !== null) {
       if (isAdminForceCheckout) {
         adminCheckoutSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+      } else if (isAdminAssign) {
+        // Admin assigns seat (marks as occupied)
+        adminAssignSeat(Number(currentFloor), selectedSeat);
         setSelectedSeat(null);
       } else if (selectedStatus === 'available') {
         reserveSeat(Number(currentFloor), selectedSeat);
@@ -109,11 +116,17 @@ const SeatsPage = () => {
       <Dialog open={selectedSeat !== null} onOpenChange={() => setSelectedSeat(null)}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="font-display">좌석 배정 확인</DialogTitle>
+            <DialogTitle className="font-display">
+              {isAdminForceCheckout ? '강제 퇴실 확인' : '좌석 배정 확인'}
+            </DialogTitle>
             <DialogDescription className="font-body">
               {isAdminForceCheckout ? (
                 <>
                   {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 강제 퇴실 처리하시겠습니까?
+                </>
+              ) : isAdminAssign ? (
+                <>
+                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 사용중으로 배정하시겠습니까?
                 </>
               ) : (
                 <>

@@ -15,16 +15,14 @@ interface AppState {
   checkoutSeat: () => void;
   extendSeat: () => void;
   adminCheckoutSeat: (floor: number, seatNumber: number) => void;
+  adminAssignSeat: (floor: number, seatNumber: number) => void;
   markNotificationRead: (id: string) => void;
 }
 
 const generateSeatStatuses = (seatIds: number[]): Record<number, SeatStatus> => {
   const statuses: Record<number, SeatStatus> = {};
   seatIds.forEach(id => {
-    const rand = Math.random();
-    if (rand < 0.45) statuses[id] = 'available';
-    else if (rand < 0.9) statuses[id] = 'occupied';
-    else statuses[id] = 'disabled';
+    statuses[id] = 'available';
   });
   return statuses;
 };
@@ -108,6 +106,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         [String(floor)]: {
           ...state.seatStatuses[String(floor)],
           [seatNumber]: 'available' as SeatStatus,
+        },
+      },
+    }));
+  },
+  adminAssignSeat: (floor, seatNumber) => {
+    set(state => ({
+      seatStatuses: {
+        ...state.seatStatuses,
+        [String(floor)]: {
+          ...state.seatStatuses[String(floor)],
+          [seatNumber]: 'occupied' as SeatStatus,
         },
       },
     }));
