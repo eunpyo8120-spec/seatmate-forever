@@ -41,12 +41,17 @@ const SeatsPage = () => {
   };
 
   const selectedStatus = selectedSeat !== null ? statuses[selectedSeat] : undefined;
-  const isAdminForceCheckout = isAdmin && selectedStatus === 'occupied';
+  const isAdminForceCheckout = isAdmin && (selectedStatus === 'occupied' || selectedStatus === 'mine');
+  const isAdminAssign = isAdmin && selectedStatus === 'available';
 
   const confirmReservation = () => {
     if (selectedSeat !== null) {
       if (isAdminForceCheckout) {
         adminCheckoutSeat(Number(currentFloor), selectedSeat);
+        setSelectedSeat(null);
+      } else if (isAdminAssign) {
+        // Admin assigns seat (marks as occupied)
+        reserveSeat(Number(currentFloor), selectedSeat);
         setSelectedSeat(null);
       } else if (selectedStatus === 'available') {
         reserveSeat(Number(currentFloor), selectedSeat);
