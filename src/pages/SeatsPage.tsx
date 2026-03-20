@@ -51,7 +51,7 @@ const SeatsPage = () => {
         setSelectedSeat(null);
       } else if (isAdminAssign) {
         // Admin assigns seat (marks as occupied)
-        reserveSeat(Number(currentFloor), selectedSeat);
+        adminAssignSeat(Number(currentFloor), selectedSeat);
         setSelectedSeat(null);
       } else if (selectedStatus === 'available') {
         reserveSeat(Number(currentFloor), selectedSeat);
