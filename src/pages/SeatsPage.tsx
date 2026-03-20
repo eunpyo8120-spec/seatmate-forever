@@ -29,8 +29,10 @@ const SeatsPage = () => {
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
     if (isAdmin) {
-      // Admin can select any occupied seat to force checkout, or available to reserve
-      setSelectedSeat(seatNum);
+      // Admin can select any seat (available to assign, occupied to force checkout)
+      if (status === 'available' || status === 'occupied' || status === 'mine') {
+        setSelectedSeat(seatNum);
+      }
       return;
     }
     if (mySeat) return; // already have a seat
