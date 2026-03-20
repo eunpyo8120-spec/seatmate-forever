@@ -116,11 +116,17 @@ const SeatsPage = () => {
       <Dialog open={selectedSeat !== null} onOpenChange={() => setSelectedSeat(null)}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="font-display">좌석 배정 확인</DialogTitle>
+            <DialogTitle className="font-display">
+              {isAdminForceCheckout ? '강제 퇴실 확인' : '좌석 배정 확인'}
+            </DialogTitle>
             <DialogDescription className="font-body">
               {isAdminForceCheckout ? (
                 <>
                   {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 강제 퇴실 처리하시겠습니까?
+                </>
+              ) : isAdminAssign ? (
+                <>
+                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 사용중으로 배정하시겠습니까?
                 </>
               ) : (
                 <>
