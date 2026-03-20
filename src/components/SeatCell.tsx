@@ -6,6 +6,7 @@ interface SeatCellProps {
   status: SeatStatus;
   onClick?: () => void;
   size?: 'sm' | 'md';
+  selected?: boolean;
 }
 
 const statusClasses: Record<SeatStatus, string> = {
@@ -16,7 +17,7 @@ const statusClasses: Record<SeatStatus, string> = {
   warning: 'seat-warning',
 };
 
-export const SeatCell = ({ number, status, onClick, size = 'md' }: SeatCellProps) => {
+export const SeatCell = ({ number, status, onClick, size = 'md', selected }: SeatCellProps) => {
   const sizeClass = size === 'sm' ? 'w-8 h-7 text-[10px]' : 'w-10 h-8 text-xs';
   
   return (
@@ -25,9 +26,9 @@ export const SeatCell = ({ number, status, onClick, size = 'md' }: SeatCellProps
         sizeClass,
         'rounded-sm font-display font-medium flex items-center justify-center transition-all duration-150 select-none',
         statusClasses[status],
+        selected && 'ring-2 ring-primary ring-offset-1 scale-110 z-10',
       )}
-      onClick={status === 'available' ? onClick : undefined}
-      disabled={status !== 'available' && status !== 'mine'}
+      onClick={onClick}
       title={`${number}번 - ${status === 'available' ? '사용가능' : status === 'occupied' ? '사용중' : status === 'mine' ? '내 좌석' : status === 'warning' ? '확인필요' : '사용불가'}`}
     >
       {number}
