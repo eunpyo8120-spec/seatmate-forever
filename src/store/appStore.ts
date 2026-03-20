@@ -21,10 +21,7 @@ interface AppState {
 const generateSeatStatuses = (seatIds: number[]): Record<number, SeatStatus> => {
   const statuses: Record<number, SeatStatus> = {};
   seatIds.forEach(id => {
-    const rand = Math.random();
-    if (rand < 0.45) statuses[id] = 'available';
-    else if (rand < 0.9) statuses[id] = 'occupied';
-    else statuses[id] = 'disabled';
+    statuses[id] = 'available';
   });
   return statuses;
 };

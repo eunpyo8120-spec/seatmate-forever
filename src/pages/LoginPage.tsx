@@ -16,7 +16,6 @@ const ALLOWED_IDS: Record<string, { name: string; isAdmin: boolean }> = {
 
 const LoginPage = () => {
   const [studentId, setStudentId] = useState('');
-  const [password, setPassword] = useState('');
   const login = useAppStore(s => s.login);
   const navigate = useNavigate();
 
@@ -45,7 +44,7 @@ const LoginPage = () => {
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground">한양대에리카</h1>
           <h2 className="text-lg font-display font-semibold text-foreground mt-1">도서관 좌석관리</h2>
-          <p className="text-sm font-body text-muted-foreground mt-1">학번으로 로그인하세요</p>
+          <p className="text-sm font-body text-muted-foreground mt-1">학번을 입력하여 로그인하세요</p>
         </div>
 
         <form onSubmit={handleLogin} className="bg-card rounded-xl p-6 shadow-sm border border-border space-y-4">
@@ -56,17 +55,6 @@ const LoginPage = () => {
               placeholder="학번을 입력하세요"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
-              className="h-11"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-display font-medium text-foreground">비밀번호</label>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
               className="h-11"
               required
             />
