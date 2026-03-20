@@ -4,26 +4,24 @@ import type { SeatStatus } from '@/types/seat';
 interface Props {
   statuses: Record<number, SeatStatus>;
   onSeatClick: (num: number) => void;
+  selectedSeats?: Set<number>;
 }
 
-const SeatBlock = ({ seats, statuses, onSeatClick }: { seats: number[][]; statuses: Record<number, SeatStatus>; onSeatClick: (n: number) => void }) => (
+const SeatBlock = ({ seats, statuses, onSeatClick, selectedSeats }: { seats: number[][]; statuses: Record<number, SeatStatus>; onSeatClick: (n: number) => void; selectedSeats?: Set<number> }) => (
   <div className="inline-flex flex-col gap-0.5">
     {seats.map((row, i) => (
       <div key={i} className="flex gap-0.5">
         {row.map(n => (
-          <SeatCell key={n} number={n} status={statuses[n] || 'available'} onClick={() => onSeatClick(n)} size="sm" />
+          <SeatCell key={n} number={n} status={statuses[n] || 'available'} onClick={() => onSeatClick(n)} size="sm" selected={selectedSeats?.has(n)} />
         ))}
       </div>
     ))}
   </div>
 );
 
-export const Floor2SeatMap = ({ statuses, onSeatClick }: Props) => {
-  // Left section: seats 174~324, pairs of 6-seat rows
+export const Floor2SeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) => {
+  // Left section: seats 205~324 (10 groups of 2×6)
   const leftGroups = [
-    [[174, 173, 172, 171, 170, 169], [180, 179, 178, 177, 176, 175]],
-    [[186, 185, 184, 183, 182, 181], [192, 191, 190, 189, 188, 187]],
-    [[198, 197, 196, 195, 194, 193], [204, 203, 202, 201, 200, 199]],
     [[210, 209, 208, 207, 206, 205], [216, 215, 214, 213, 212, 211]],
     [[222, 221, 220, 219, 218, 217], [228, 227, 226, 225, 224, 223]],
     [[234, 233, 232, 231, 230, 229], [240, 239, 238, 237, 236, 235]],
@@ -36,12 +34,8 @@ export const Floor2SeatMap = ({ statuses, onSeatClick }: Props) => {
     [[318, 317, 316, 315, 314, 313], [324, 323, 322, 321, 320, 319]],
   ];
 
-  // Right section: seats 1~168, pairs of 6-seat rows
+  // Right section: seats 49~168 (10 groups of 2×6)
   const rightGroups = [
-    [[6, 5, 4, 3, 2, 1], [12, 11, 10, 9, 8, 7]],
-    [[18, 17, 16, 15, 14, 13], [24, 23, 22, 21, 20, 19]],
-    [[30, 29, 28, 27, 26, 25], [36, 35, 34, 33, 32, 31]],
-    [[42, 41, 40, 39, 38, 37], [48, 47, 46, 45, 44, 43]],
     [[54, 53, 52, 51, 50, 49], [60, 59, 58, 57, 56, 55]],
     [[66, 65, 64, 63, 62, 61], [72, 71, 70, 69, 68, 67]],
     [[78, 77, 76, 75, 74, 73], [84, 83, 82, 81, 80, 79]],
@@ -59,17 +53,17 @@ export const Floor2SeatMap = ({ statuses, onSeatClick }: Props) => {
       <div className="flex gap-8 min-w-[700px]">
         {/* Left Section */}
         <div className="flex flex-col gap-3">
-          <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">좌측 구역 (169~324)</div>
+          <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">좌측 구역 (205~324)</div>
           {leftGroups.map((seats, i) => (
-            <SeatBlock key={i} seats={seats} statuses={statuses} onSeatClick={onSeatClick} />
+            <SeatBlock key={i} seats={seats} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
           ))}
         </div>
 
         {/* Right Section */}
         <div className="flex flex-col gap-3">
-          <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">우측 구역 (1~168)</div>
+          <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">우측 구역 (49~168)</div>
           {rightGroups.map((seats, i) => (
-            <SeatBlock key={i} seats={seats} statuses={statuses} onSeatClick={onSeatClick} />
+            <SeatBlock key={i} seats={seats} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
           ))}
         </div>
       </div>

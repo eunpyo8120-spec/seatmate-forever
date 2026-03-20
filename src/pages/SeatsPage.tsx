@@ -5,7 +5,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
 import { Floor4SeatMap } from '@/components/Floor4SeatMap';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,12 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
   const { seatStatuses, reserveSeat, mySeat, isAdmin, adminCheckoutSeat, adminAssignSeat } = useAppStore();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
+  const [adminSelectedSeats, setAdminSelectedSeats] = useState<Set<number>>(new Set());
+  const [adminAction, setAdminAction] = useState<'assign' | 'checkout' | null>(null);
 
   const currentFloor = floor || '2';
   const statuses = seatStatuses[currentFloor] || {};
@@ -28,41 +31,72 @@ const SeatsPage = () => {
 
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
+
     if (isAdmin) {
-      // Admin can select any seat (available to assign, occupied to force checkout)
-      if (status === 'available' || status === 'occupied' || status === 'mine') {
-        setSelectedSeat(seatNum);
-      }
+      // Admin multi-select toggle
+      setAdminSelectedSeats(prev => {
+        const next = new Set(prev);
+        if (next.has(seatNum)) {
+          next.delete(seatNum);
+        } else {
+          next.add(seatNum);
+        }
+        return next;
+      });
       return;
     }
-    if (mySeat) return; // already have a seat
+
+    if (mySeat) return;
     if (status !== 'available') return;
     setSelectedSeat(seatNum);
   };
 
-  const selectedStatus = selectedSeat !== null ? statuses[selectedSeat] : undefined;
-  const isAdminForceCheckout = isAdmin && (selectedStatus === 'occupied' || selectedStatus === 'mine');
-  const isAdminAssign = isAdmin && selectedStatus === 'available';
+  const handleAdminBatchAssign = () => {
+    const available = [...adminSelectedSeats].filter(s => statuses[s] === 'available');
+    if (available.length === 0) {
+      toast.error('배정 가능한 좌석이 선택되지 않았습니다.');
+      return;
+    }
+    setAdminAction('assign');
+  };
+
+  const handleAdminBatchCheckout = () => {
+    const occupied = [...adminSelectedSeats].filter(s => statuses[s] === 'occupied' || statuses[s] === 'mine');
+    if (occupied.length === 0) {
+      toast.error('퇴실 가능한 좌석이 선택되지 않았습니다.');
+      return;
+    }
+    setAdminAction('checkout');
+  };
+
+  const confirmAdminAction = () => {
+    const floorNum = Number(currentFloor);
+    if (adminAction === 'assign') {
+      const seats = [...adminSelectedSeats].filter(s => statuses[s] === 'available');
+      seats.forEach(s => adminAssignSeat(floorNum, s));
+      toast.success(`${seats.length}석 배정 완료`);
+    } else if (adminAction === 'checkout') {
+      const seats = [...adminSelectedSeats].filter(s => statuses[s] === 'occupied' || statuses[s] === 'mine');
+      seats.forEach(s => adminCheckoutSeat(floorNum, s));
+      toast.success(`${seats.length}석 퇴실 완료`);
+    }
+    setAdminSelectedSeats(new Set());
+    setAdminAction(null);
+  };
 
   const confirmReservation = () => {
     if (selectedSeat !== null) {
-      if (isAdminForceCheckout) {
-        adminCheckoutSeat(Number(currentFloor), selectedSeat);
-        setSelectedSeat(null);
-      } else if (isAdminAssign) {
-        // Admin assigns seat (marks as occupied)
-        adminAssignSeat(Number(currentFloor), selectedSeat);
-        setSelectedSeat(null);
-      } else if (selectedStatus === 'available') {
-        reserveSeat(Number(currentFloor), selectedSeat);
-        setSelectedSeat(null);
-        navigate('/my-seat');
-      }
+      reserveSeat(Number(currentFloor), selectedSeat);
+      setSelectedSeat(null);
+      navigate('/my-seat');
     }
   };
 
   const availableCount = Object.values(statuses).filter(v => v === 'available').length;
   const totalCount = Object.keys(statuses).length;
+
+  const selectedAvailableCount = [...adminSelectedSeats].filter(s => statuses[s] === 'available').length;
+  const selectedOccupiedCount = [...adminSelectedSeats].filter(s => statuses[s] === 'occupied' || statuses[s] === 'mine').length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -77,12 +111,11 @@ const SeatsPage = () => {
             잔여 <span className="text-available font-semibold">{availableCount}</span> / {totalCount}석
           </p>
         </div>
-        {/* Floor tabs */}
         <div className="flex gap-1 bg-muted rounded-lg p-0.5">
           {['2', '4'].map(f => (
             <button
               key={f}
-              onClick={() => navigate(`/seats/${f}`)}
+              onClick={() => { navigate(`/seats/${f}`); setAdminSelectedSeats(new Set()); }}
               className={`px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
                 currentFloor === f
                   ? 'bg-primary text-primary-foreground'
@@ -98,51 +131,81 @@ const SeatsPage = () => {
       {/* Legend */}
       <div className="px-4 py-3 border-b border-border bg-card">
         <SeatLegend />
-        {mySeat && (
+        {!isAdmin && mySeat && (
           <p className="text-xs text-destructive font-body mt-2">
             * 이미 배정된 좌석이 있어 새 좌석을 선택할 수 없습니다.
           </p>
         )}
       </div>
 
-      {/* Seat Map */}
-      {currentFloor === '2' ? (
-        <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
-      ) : (
-        <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+      {/* Admin toolbar */}
+      {isAdmin && adminSelectedSeats.size > 0 && (
+        <div className="sticky top-[60px] z-30 bg-card border-b border-border px-4 py-2 flex items-center gap-2">
+          <CheckSquare className="w-4 h-4 text-primary" />
+          <span className="text-xs font-display font-semibold text-foreground">
+            {adminSelectedSeats.size}석 선택됨
+          </span>
+          <div className="flex-1" />
+          {selectedAvailableCount > 0 && (
+            <Button size="sm" variant="default" onClick={handleAdminBatchAssign} className="text-xs h-7">
+              배정 ({selectedAvailableCount})
+            </Button>
+          )}
+          {selectedOccupiedCount > 0 && (
+            <Button size="sm" variant="destructive" onClick={handleAdminBatchCheckout} className="text-xs h-7">
+              퇴실 ({selectedOccupiedCount})
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => setAdminSelectedSeats(new Set())} className="text-xs h-7">
+            초기화
+          </Button>
+        </div>
       )}
 
-      {/* Confirmation Dialog */}
+      {/* Seat Map */}
+      {currentFloor === '2' ? (
+        <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
+      ) : (
+        <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
+      )}
+
+      {/* User Reservation Dialog */}
       <Dialog open={selectedSeat !== null} onOpenChange={() => setSelectedSeat(null)}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
+            <DialogTitle className="font-display">좌석 배정 확인</DialogTitle>
+            <DialogDescription className="font-body">
+              {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 배정하시겠습니까?
+              <br />
+              <span className="text-xs text-muted-foreground">이용시간: 4시간 (연장 가능)</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedSeat(null)} className="flex-1">취소</Button>
+            <Button onClick={confirmReservation} className="flex-1">배정하기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Batch Action Dialog */}
+      <Dialog open={adminAction !== null} onOpenChange={() => setAdminAction(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
             <DialogTitle className="font-display">
-              {isAdminForceCheckout ? '강제 퇴실 확인' : '좌석 배정 확인'}
+              {adminAction === 'assign' ? '일괄 배정 확인' : '일괄 퇴실 확인'}
             </DialogTitle>
             <DialogDescription className="font-body">
-              {isAdminForceCheckout ? (
-                <>
-                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 강제 퇴실 처리하시겠습니까?
-                </>
-              ) : isAdminAssign ? (
-                <>
-                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 사용중으로 배정하시겠습니까?
-                </>
+              {adminAction === 'assign' ? (
+                <>선택된 <span className="font-semibold text-foreground">{selectedAvailableCount}석</span>을 사용중으로 배정하시겠습니까?</>
               ) : (
-                <>
-                  {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 배정하시겠습니까?
-                  <br />
-                  <span className="text-xs text-muted-foreground">이용시간: 4시간 (연장 가능)</span>
-                </>
+                <>선택된 <span className="font-semibold text-foreground">{selectedOccupiedCount}석</span>을 퇴실 처리하시겠습니까?</>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setSelectedSeat(null)} className="flex-1">
-              취소
-            </Button>
-            <Button onClick={confirmReservation} className="flex-1" variant={isAdminForceCheckout ? 'destructive' : 'default'}>
-              {isAdminForceCheckout ? '강제 퇴실' : '배정하기'}
+            <Button variant="outline" onClick={() => setAdminAction(null)} className="flex-1">취소</Button>
+            <Button onClick={confirmAdminAction} className="flex-1" variant={adminAction === 'checkout' ? 'destructive' : 'default'}>
+              {adminAction === 'assign' ? '배정하기' : '퇴실하기'}
             </Button>
           </DialogFooter>
         </DialogContent>
