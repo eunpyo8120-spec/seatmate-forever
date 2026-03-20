@@ -15,6 +15,7 @@ interface AppState {
   checkoutSeat: () => void;
   extendSeat: () => void;
   adminCheckoutSeat: (floor: number, seatNumber: number) => void;
+  adminAssignSeat: (floor: number, seatNumber: number) => void;
   markNotificationRead: (id: string) => void;
 }
 
