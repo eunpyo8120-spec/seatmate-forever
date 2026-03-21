@@ -60,12 +60,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   reserveSeat: (floor, seatNumber) => {
     const now = new Date();
     const end = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+    const label = getSeatLabel(seatNumber);
+    const floorDisplayName = getFloorName(floor);
     set(state => ({
       mySeat: { floor, seatNumber, startTime: now, endTime: end },
       seatStatuses: {
         ...state.seatStatuses,
-        [String(floor)]: {
-          ...state.seatStatuses[String(floor)],
+        [floor]: {
+          ...state.seatStatuses[floor],
           [seatNumber]: 'mine' as SeatStatus,
         },
       },
@@ -74,7 +76,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           id: Date.now().toString(),
           type: 'confirmed' as const,
           title: '좌석 배정 완료',
-          message: `${floor}층 열람실 ${seatNumber}번 좌석이 배정되었습니다.`,
+          message: `${floorDisplayName} ${label}번 좌석이 배정되었습니다.`,
           time: '방금 전',
           read: false,
         },
