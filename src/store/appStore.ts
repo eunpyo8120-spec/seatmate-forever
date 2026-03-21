@@ -29,6 +29,12 @@ const generateSeatStatuses = (seatIds: number[]): Record<number, SeatStatus> => 
 
 const floor2Seats = Array.from({ length: 324 }, (_, i) => i + 1);
 const floor4Seats = Array.from({ length: 218 }, (_, i) => i + 1);
+// 4N: regular 7-83, N-seats 101-127, C-seats 201-206
+const floor4NSeats = [
+  ...Array.from({ length: 77 }, (_, i) => i + 7),    // 7~83
+  ...Array.from({ length: 27 }, (_, i) => i + 101),   // N1~N27 → 101~127
+  ...Array.from({ length: 6 }, (_, i) => i + 201),    // C1~C6 → 201~206
+];
 
 const initialNotifications: Notification[] = [
   { id: '1', type: 'info', title: '공지사항', message: '도서관 이용시간이 변경되었습니다. (09:00 ~ 22:00)', time: '10분 전', read: false },
