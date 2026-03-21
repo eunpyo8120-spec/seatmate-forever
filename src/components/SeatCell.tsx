@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface SeatCellProps {
   number: number;
+  label?: string;
   status: SeatStatus;
   onClick?: () => void;
   size?: 'sm' | 'md';
