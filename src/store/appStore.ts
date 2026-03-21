@@ -51,6 +51,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   seatStatuses: {
     '2': generateSeatStatuses(floor2Seats),
     '4': generateSeatStatuses(floor4Seats),
+    '4N': generateSeatStatuses(floor4NSeats),
   },
   notifications: initialNotifications,
   login: (studentId, name, isAdmin) => set({ isLoggedIn: true, studentId, userName: name, isAdmin }),

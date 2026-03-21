@@ -170,8 +170,10 @@ const SeatsPage = () => {
       {/* Seat Map */}
       {currentFloor === '2' ? (
         <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
-      ) : (
+      ) : currentFloor === '4' ? (
         <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
+      ) : (
+        <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
       )}
 
       {/* User Reservation Dialog */}

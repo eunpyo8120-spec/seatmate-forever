@@ -102,6 +102,7 @@ const MainPage = () => {
             {[
               { floor: '2', name: '2층 1열람실', total: getTotalCount('2'), available: getAvailableCount('2') },
               { floor: '4', name: '4층 2열람실', total: getTotalCount('4'), available: getAvailableCount('4') },
+              { floor: '4N', name: '4층 노상일열람실', total: getTotalCount('4N'), available: getAvailableCount('4N') },
             ].map(room => (
               <motion.button
                 key={room.floor}
