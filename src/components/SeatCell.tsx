@@ -18,8 +18,9 @@ const statusClasses: Record<SeatStatus, string> = {
   warning: 'seat-warning',
 };
 
-export const SeatCell = ({ number, status, onClick, size = 'md', selected }: SeatCellProps) => {
+export const SeatCell = ({ number, label, status, onClick, size = 'md', selected }: SeatCellProps) => {
   const sizeClass = size === 'sm' ? 'w-8 h-7 text-[10px]' : 'w-10 h-8 text-xs';
+  const displayLabel = label || String(number);
   
   return (
     <button
@@ -30,9 +31,9 @@ export const SeatCell = ({ number, status, onClick, size = 'md', selected }: Sea
         selected && 'ring-2 ring-primary ring-offset-1 scale-110 z-10',
       )}
       onClick={onClick}
-      title={`${number}번 - ${status === 'available' ? '사용가능' : status === 'occupied' ? '사용중' : status === 'mine' ? '내 좌석' : status === 'warning' ? '확인필요' : '사용불가'}`}
+      title={`${displayLabel}번 - ${status === 'available' ? '사용가능' : status === 'occupied' ? '사용중' : status === 'mine' ? '내 좌석' : status === 'warning' ? '확인필요' : '사용불가'}`}
     >
-      {number}
+      {displayLabel}
     </button>
   );
 };
