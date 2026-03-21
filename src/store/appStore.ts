@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { SeatStatus, Notification } from '@/types/seat';
+import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
 interface AppState {
   isLoggedIn: boolean;
