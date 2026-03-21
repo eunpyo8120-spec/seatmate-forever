@@ -105,8 +105,7 @@ export const Floor4NSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) 
         </div>
 
         {/* Bottom: C seats (컴퓨터석) */}
-        <div className="mt-6 flex gap-2 justify-center">
-          <div className="text-[10px] font-display font-semibold text-muted-foreground mr-2 self-center">컴퓨터석</div>
+        <div className="mt-6 flex gap-2">
           {[201, 202, 203, 204, 205, 206].map(n => (
             <Cell key={n} id={n} label={cLabel(n)} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
           ))}
