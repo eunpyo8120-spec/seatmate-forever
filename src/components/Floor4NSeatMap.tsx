@@ -50,7 +50,7 @@ export const Floor4NSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) 
         <div className="flex gap-6">
           {/* Left: N-seat groups */}
           <div className="flex flex-col gap-6">
-            <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">노트북석</div>
+            <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">그룹스터디룸</div>
             {/* N27,N25,N23,N22 + N21 */}
             <NGroup ids={[127, 125, 123, 122]} standalone={121} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
             {/* N19,N20,N18,N17 + N16 */}
@@ -105,8 +105,7 @@ export const Floor4NSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) 
         </div>
 
         {/* Bottom: C seats (컴퓨터석) */}
-        <div className="mt-6 flex gap-2 justify-center">
-          <div className="text-[10px] font-display font-semibold text-muted-foreground mr-2 self-center">컴퓨터석</div>
+        <div className="mt-6 flex gap-2">
           {[201, 202, 203, 204, 205, 206].map(n => (
             <Cell key={n} id={n} label={cLabel(n)} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
           ))}
