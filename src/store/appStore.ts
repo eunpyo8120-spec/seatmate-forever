@@ -11,7 +11,7 @@ interface AppState {
   notifications: Notification[];
   login: (studentId: string, name: string, isAdmin: boolean) => void;
   logout: () => void;
-  reserveSeat: (floor: number, seatNumber: number) => void;
+  reserveSeat: (floor: string, seatNumber: number) => void;
   checkoutSeat: () => void;
   extendSeat: () => void;
   adminCheckoutSeat: (floor: number, seatNumber: number) => void;
