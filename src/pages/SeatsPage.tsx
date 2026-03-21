@@ -113,17 +113,21 @@ const SeatsPage = () => {
           </p>
         </div>
         <div className="flex gap-1 bg-muted rounded-lg p-0.5">
-          {['2', '4'].map(f => (
+          {[
+            { key: '2', label: '2층' },
+            { key: '4', label: '4층' },
+            { key: '4N', label: '노상일' },
+          ].map(f => (
             <button
-              key={f}
-              onClick={() => { navigate(`/seats/${f}`); setAdminSelectedSeats(new Set()); }}
+              key={f.key}
+              onClick={() => { navigate(`/seats/${f.key}`); setAdminSelectedSeats(new Set()); }}
               className={`px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
-                currentFloor === f
+                currentFloor === f.key
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {f}층
+              {f.label}
             </button>
           ))}
         </div>
