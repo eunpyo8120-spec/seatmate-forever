@@ -5,6 +5,7 @@ import { MapPin, Clock, Plus, LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
 const MySeatPage = () => {
   const { mySeat, checkoutSeat, extendSeat } = useAppStore();
