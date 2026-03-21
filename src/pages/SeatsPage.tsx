@@ -5,6 +5,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
 import { Floor4SeatMap } from '@/components/Floor4SeatMap';
+import { Floor4NSeatMap } from '@/components/Floor4NSeatMap';
 import { ArrowLeft, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
