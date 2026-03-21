@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 import { useAppStore } from '@/store/appStore';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
