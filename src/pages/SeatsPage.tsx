@@ -183,7 +183,7 @@ const SeatsPage = () => {
           <DialogHeader>
             <DialogTitle className="font-display">좌석 배정 확인</DialogTitle>
             <DialogDescription className="font-body">
-              {floorName} <span className="font-semibold text-foreground">{selectedSeat}번</span> 좌석을 배정하시겠습니까?
+              {floorName} <span className="font-semibold text-foreground">{selectedSeat !== null ? getSeatLabel(selectedSeat) : ''}번</span> 좌석을 배정하시겠습니까?
               <br />
               <span className="text-xs text-muted-foreground">이용시간: 4시간 (연장 가능)</span>
             </DialogDescription>

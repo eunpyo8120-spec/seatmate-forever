@@ -81,8 +81,8 @@ const MySeatPage = () => {
               <MapPin className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="font-display font-bold text-foreground">{mySeat.floor}층 열람실</p>
-              <p className="text-2xl font-display font-bold text-primary">{mySeat.seatNumber}번</p>
+              <p className="font-display font-bold text-foreground">{getFloorName(mySeat.floor)}</p>
+              <p className="text-2xl font-display font-bold text-primary">{getSeatLabel(mySeat.seatNumber)}번</p>
             </div>
           </div>
 
