@@ -6,7 +6,7 @@ interface AppState {
   userName: string;
   studentId: string;
   isAdmin: boolean;
-  mySeat: { floor: number; seatNumber: number; startTime: Date; endTime: Date } | null;
+  mySeat: { floor: string; seatNumber: number; startTime: Date; endTime: Date } | null;
   seatStatuses: Record<string, Record<number, SeatStatus>>;
   notifications: Notification[];
   login: (studentId: string, name: string, isAdmin: boolean) => void;
