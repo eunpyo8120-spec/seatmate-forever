@@ -88,7 +88,7 @@ const SeatsPage = () => {
 
   const confirmReservation = () => {
     if (selectedSeat !== null) {
-      reserveSeat(Number(currentFloor), selectedSeat);
+      reserveSeat(currentFloor, selectedSeat);
       setSelectedSeat(null);
       navigate('/my-seat');
     }
