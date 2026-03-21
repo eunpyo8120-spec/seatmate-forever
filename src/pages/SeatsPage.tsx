@@ -5,6 +5,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
 import { Floor4SeatMap } from '@/components/Floor4SeatMap';
+import { Floor4NSeatMap } from '@/components/Floor4NSeatMap';
 import { ArrowLeft, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +28,7 @@ const SeatsPage = () => {
 
   const currentFloor = floor || '2';
   const statuses = seatStatuses[currentFloor] || {};
-  const floorName = currentFloor === '2' ? '2층 1열람실' : '4층 2열람실';
+  const floorName = currentFloor === '2' ? '2층 1열람실' : currentFloor === '4' ? '4층 2열람실' : '4층 노상일열람실';
 
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
@@ -112,17 +113,21 @@ const SeatsPage = () => {
           </p>
         </div>
         <div className="flex gap-1 bg-muted rounded-lg p-0.5">
-          {['2', '4'].map(f => (
+          {[
+            { key: '2', label: '2층' },
+            { key: '4', label: '4층' },
+            { key: '4N', label: '노상일' },
+          ].map(f => (
             <button
-              key={f}
-              onClick={() => { navigate(`/seats/${f}`); setAdminSelectedSeats(new Set()); }}
+              key={f.key}
+              onClick={() => { navigate(`/seats/${f.key}`); setAdminSelectedSeats(new Set()); }}
               className={`px-3 py-1.5 rounded-md text-xs font-display font-semibold transition-colors ${
-                currentFloor === f
+                currentFloor === f.key
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {f}층
+              {f.label}
             </button>
           ))}
         </div>
@@ -165,8 +170,10 @@ const SeatsPage = () => {
       {/* Seat Map */}
       {currentFloor === '2' ? (
         <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
-      ) : (
+      ) : currentFloor === '4' ? (
         <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
+      ) : (
+        <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} selectedSeats={isAdmin ? adminSelectedSeats : undefined} />
       )}
 
       {/* User Reservation Dialog */}
