@@ -27,7 +27,7 @@ const generateSeatStatuses = (seatIds: number[]): Record<number, SeatStatus> => 
   return statuses;
 };
 
-const floor2Seats = [...Array.from({ length: 120 }, (_, i) => 49 + i), ...Array.from({ length: 120 }, (_, i) => 205 + i)];
+const floor2Seats = Array.from({ length: 324 }, (_, i) => i + 1);
 const floor4Seats = Array.from({ length: 218 }, (_, i) => i + 1);
 
 const initialNotifications: Notification[] = [
