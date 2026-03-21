@@ -28,7 +28,7 @@ const SeatsPage = () => {
 
   const currentFloor = floor || '2';
   const statuses = seatStatuses[currentFloor] || {};
-  const floorName = currentFloor === '2' ? '2층 1열람실' : '4층 2열람실';
+  const floorName = currentFloor === '2' ? '2층 1열람실' : currentFloor === '4' ? '4층 2열람실' : '4층 노상일열람실';
 
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
