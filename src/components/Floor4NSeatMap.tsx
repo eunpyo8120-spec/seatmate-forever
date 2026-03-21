@@ -50,7 +50,7 @@ export const Floor4NSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) 
         <div className="flex gap-6">
           {/* Left: N-seat groups */}
           <div className="flex flex-col gap-6">
-            <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">노트북석</div>
+            <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">그룹스터디룸</div>
             {/* N27,N25,N23,N22 + N21 */}
             <NGroup ids={[127, 125, 123, 122]} standalone={121} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
             {/* N19,N20,N18,N17 + N16 */}
