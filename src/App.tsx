@@ -10,14 +10,20 @@ import MySeatPage from "./pages/MySeatPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
+import { useReservations } from "./hooks/useReservations";
 
 const queryClient = new QueryClient();
+
+const ReservationSync = ({ children }: { children: React.ReactNode }) => {
+  useReservations();
+  return <>{children}</>;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">로딩중...</div>;
   if (!user) return <Navigate to="/" replace />;
-  return <>{children}</>;
+  return <ReservationSync>{children}</ReservationSync>;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
