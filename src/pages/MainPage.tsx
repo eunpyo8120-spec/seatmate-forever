@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useReservations } from '@/hooks/useReservations';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 const MainPage = () => {
-  const { userName, mySeat, checkoutSeat, seatStatuses } = useAppStore();
+  const { userName, mySeat, seatStatuses } = useAppStore();
   const { signOut } = useAuth();
+  const { checkoutSeat } = useReservations();
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {
@@ -26,7 +28,6 @@ const MainPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-primary px-5 pt-12 pb-6">
         <div className="flex items-center justify-between">
           <div>
@@ -48,7 +49,6 @@ const MainPage = () => {
       </div>
 
       <div className="px-5 -mt-4 space-y-4">
-        {/* Active Seat Card */}
         {mySeat ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -97,7 +97,6 @@ const MainPage = () => {
           </div>
         )}
 
-        {/* Floor Selection */}
         <div>
           <h2 className="font-display font-semibold text-foreground mb-3">열람실 선택</h2>
           <div className="space-y-3">

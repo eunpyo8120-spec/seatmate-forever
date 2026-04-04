@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { useReservations } from '@/hooks/useReservations';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, Plus, LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,11 @@ import { motion } from 'framer-motion';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
 const MySeatPage = () => {
-  const { mySeat, checkoutSeat, extendSeat } = useAppStore();
+  const { mySeat } = useAppStore();
+  const { checkoutSeat, extendSeat } = useReservations();
   const navigate = useNavigate();
   const [remaining, setRemaining] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!mySeat) return;
@@ -59,7 +62,6 @@ const MySeatPage = () => {
       </div>
 
       <div className="px-5 py-6 space-y-5">
-        {/* Timer Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -74,7 +76,6 @@ const MySeatPage = () => {
           </p>
         </motion.div>
 
-        {/* Seat Info */}
         <div className="bg-card rounded-xl p-5 border border-border space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -92,23 +93,26 @@ const MySeatPage = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="space-y-3">
           <Button
-            onClick={extendSeat}
+            onClick={async () => { setLoading(true); await extendSeat(); setLoading(false); }}
             variant="outline"
             className="w-full h-12 font-display font-semibold text-base"
+            disabled={loading}
           >
             <Plus className="w-5 h-5 mr-2" />
             시간 연장 (2시간)
           </Button>
           <Button
-            onClick={() => {
-              checkoutSeat();
+            onClick={async () => {
+              setLoading(true);
+              await checkoutSeat();
+              setLoading(false);
               navigate('/main');
             }}
             variant="destructive"
             className="w-full h-12 font-display font-semibold text-base"
+            disabled={loading}
           >
             <LogOutIcon className="w-5 h-5 mr-2" />
             퇴실하기
