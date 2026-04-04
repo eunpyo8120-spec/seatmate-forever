@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 
 const MainPage = () => {
   const { userName, mySeat, checkoutSeat, seatStatuses } = useAppStore();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {
