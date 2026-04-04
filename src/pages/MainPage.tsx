@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
+import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { motion } from 'framer-motion';
 
 const MainPage = () => {
   const { userName, mySeat, checkoutSeat, seatStatuses } = useAppStore();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {
@@ -35,8 +37,8 @@ const MainPage = () => {
             variant="ghost"
             size="icon"
             className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-            onClick={() => {
-              useAppStore.getState().logout();
+            onClick={async () => {
+              await signOut();
               navigate('/');
             }}
           >
