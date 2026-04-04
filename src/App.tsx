@@ -9,13 +9,21 @@ import SeatsPage from "./pages/SeatsPage";
 import MySeatPage from "./pages/MySeatPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
-import { useAppStore } from "./store/appStore";
+import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = useAppStore(s => s.isLoggedIn);
-  if (!isLoggedIn) return <Navigate to="/" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">로딩중...</div>;
+  if (!user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">로딩중...</div>;
+  if (user) return <Navigate to="/main" replace />;
   return <>{children}</>;
 };
 
@@ -26,7 +34,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/main" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
           <Route path="/seats" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
           <Route path="/seats/:floor" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />

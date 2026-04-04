@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
+import { useAuth } from '@/hooks/useAuth';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
