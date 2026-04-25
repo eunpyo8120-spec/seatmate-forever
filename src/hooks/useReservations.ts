@@ -11,6 +11,13 @@ export const useReservations = () => {
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
 
   const fetchReservations = useCallback(async () => {
+    // Expire overdue reservations before fetching
+    await supabase
+      .from('reservations')
+      .update({ is_active: false })
+      .eq('is_active', true)
+      .lt('end_time', new Date().toISOString());
+
     const { data, error } = await supabase
       .from('reservations')
       .select('*')
