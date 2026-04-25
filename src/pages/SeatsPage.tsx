@@ -24,8 +24,9 @@ const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
   const { seatStatuses, mySeat, isAdmin } = useAppStore();
-  const { reserveSeat } = useReservations();
+  const { reserveSeat, adminCheckoutSeat } = useReservations();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
+  const [adminTarget, setAdminTarget] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const currentFloor = floor || '2';
@@ -34,7 +35,11 @@ const SeatsPage = () => {
 
   const handleSeatClick = (seatNum: number) => {
     const status = statuses[seatNum];
-    if (mySeat) return;
+    if (isAdmin && (status === 'occupied' || status === 'mine')) {
+      setAdminTarget(seatNum);
+      return;
+    }
+    if (!isAdmin && mySeat) return;
     if (status !== 'available') return;
     setSelectedSeat(seatNum);
   };
@@ -93,9 +98,14 @@ const SeatsPage = () => {
       {/* Legend */}
       <div className="px-4 py-3 border-b border-border bg-card">
         <SeatLegend />
-        {mySeat && (
+        {mySeat && !isAdmin && (
           <p className="text-xs text-destructive font-body mt-2">
             * 이미 배정된 좌석이 있어 새 좌석을 선택할 수 없습니다.
+          </p>
+        )}
+        {isAdmin && (
+          <p className="text-xs text-primary font-body mt-2 font-semibold">
+            * 관리자 모드: 점유 좌석 클릭 시 강제 퇴실, 여러 좌석 예약 가능
           </p>
         )}
       </div>
@@ -108,6 +118,35 @@ const SeatsPage = () => {
       ) : (
         <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
       )}
+
+      {/* Admin Checkout Dialog */}
+      <Dialog open={adminTarget !== null} onOpenChange={() => setAdminTarget(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">관리자 퇴실 처리</DialogTitle>
+            <DialogDescription className="font-body">
+              {floorName} <span className="font-semibold text-foreground">{adminTarget !== null ? getSeatLabel(adminTarget) : ''}번</span> 좌석을 강제 퇴실 처리하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setAdminTarget(null)} className="flex-1" disabled={loading}>취소</Button>
+            <Button variant="destructive" className="flex-1" disabled={loading} onClick={async () => {
+              if (adminTarget === null) return;
+              setLoading(true);
+              const { error } = await adminCheckoutSeat(currentFloor, adminTarget);
+              setLoading(false);
+              if (error) {
+                toast.error('퇴실 처리 실패: ' + error);
+              } else {
+                toast.success(`${getSeatLabel(adminTarget)}번 좌석 퇴실 처리 완료`);
+                setAdminTarget(null);
+              }
+            }}>
+              {loading ? '처리중...' : '퇴실 처리'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reservation Dialog */}
       <Dialog open={selectedSeat !== null} onOpenChange={() => setSelectedSeat(null)}>

@@ -149,5 +149,22 @@ export const useReservations = () => {
     await fetchReservations();
   };
 
-  return { fetchReservations, reserveSeat, checkoutSeat, extendSeat };
+  const adminCheckoutSeat = async (floor: string, seatNumber: number) => {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ is_active: false })
+      .eq('floor', floor)
+      .eq('seat_number', seatNumber)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Admin checkout failed:', error);
+      return { error: error.message };
+    }
+
+    await fetchReservations();
+    return { error: null };
+  };
+
+  return { fetchReservations, reserveSeat, checkoutSeat, extendSeat, adminCheckoutSeat };
 };
