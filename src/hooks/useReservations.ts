@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
 import { useAuth } from './useAuth';
@@ -8,6 +8,7 @@ export const useReservations = () => {
   const { user } = useAuth();
   const setSeatStatuses = useAppStore(s => s.setSeatStatuses);
   const setMySeat = useAppStore(s => s.setMySeat);
+  const channelName = useRef(`reservations-realtime-${Math.random()}`);
 
   const fetchReservations = useCallback(async () => {
     const { data, error } = await supabase
@@ -67,7 +68,7 @@ export const useReservations = () => {
     fetchReservations();
 
     const channel = supabase
-      .channel('reservations-realtime')
+      .channel(channelName.current)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reservations' },
