@@ -17,9 +17,9 @@ export const useAuth = () => {
         if (u) {
           const studentId = u.user_metadata?.student_id || '';
           const isAdmin = studentId.startsWith('9999');
-          supabase.from('profiles').select('full_name, display_name').eq('student_id', studentId).single()
+          supabase.from('profiles').select('display_name').eq('student_id', studentId).single()
             .then(({ data }) => {
-              const name = data?.display_name || data?.full_name || studentId;
+              const name = data?.display_name || studentId;
               login(studentId, name, isAdmin);
             });
         } else {
@@ -35,9 +35,9 @@ export const useAuth = () => {
       if (u) {
         const studentId = u.user_metadata?.student_id || '';
         const isAdmin = studentId.startsWith('9999');
-        supabase.from('profiles').select('full_name, display_name').eq('student_id', studentId).single()
+        supabase.from('profiles').select('display_name').eq('student_id', studentId).single()
           .then(({ data }) => {
-            const name = data?.display_name || data?.full_name || studentId;
+            const name = data?.display_name || studentId;
             login(studentId, name, isAdmin);
           });
       }
