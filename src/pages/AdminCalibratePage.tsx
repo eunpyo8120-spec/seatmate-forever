@@ -73,13 +73,13 @@ export default function AdminCalibratePage() {
   // Supabase에서 ROI 로드
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('seat_roi_configs')
         .select('seat_label,camera_id,points')
         .eq('camera_id', 'main');
       if (data && data.length > 0) {
         setRois(data as RoiConfig[]);
-        setSelectedSeat(data[0].seat_label);
+        setSelectedSeat((data[0] as any).seat_label);
       }
     })();
   }, []);
