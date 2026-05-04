@@ -16,34 +16,28 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
-          id: string
-          user_id: string | null
-          student_id: string
-          full_name: string | null
-          display_name: string | null
-          department: string | null
           created_at: string
-          updated_at: string | null
+          display_name: string | null
+          id: string
+          student_id: string
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id?: string | null
-          student_id: string
-          full_name?: string | null
-          display_name?: string | null
-          department?: string | null
           created_at?: string
-          updated_at?: string | null
+          display_name?: string | null
+          id?: string
+          student_id: string
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string | null
-          student_id?: string
-          full_name?: string | null
-          display_name?: string | null
-          department?: string | null
           created_at?: string
-          updated_at?: string | null
+          display_name?: string | null
+          id?: string
+          student_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -80,114 +74,6 @@ export type Database = {
           start_time?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      seats: {
-        Row: {
-          id: number
-          seat_number: string
-          status: string | null
-          has_person: boolean | null
-          has_items: boolean | null
-          last_updated: string | null
-        }
-        Insert: {
-          id?: number
-          seat_number: string
-          status?: string | null
-          has_person?: boolean | null
-          has_items?: boolean | null
-          last_updated?: string | null
-        }
-        Update: {
-          id?: number
-          seat_number?: string
-          status?: string | null
-          has_person?: boolean | null
-          has_items?: boolean | null
-          last_updated?: string | null
-        }
-        Relationships: []
-      }
-      detection_logs: {
-        Row: {
-          id: string
-          seat_id: string
-          has_person: boolean
-          has_items: boolean
-          status: string
-          detected_at: string
-        }
-        Insert: {
-          id?: string
-          seat_id: string
-          has_person: boolean
-          has_items: boolean
-          status: string
-          detected_at?: string
-        }
-        Update: {
-          id?: string
-          seat_id?: string
-          has_person?: boolean
-          has_items?: boolean
-          status?: string
-          detected_at?: string
-        }
-        Relationships: []
-      }
-      occupancy_conflict_logs: {
-        Row: {
-          id: string
-          seat_id: string
-          reserved_by: string | null
-          detected_person: boolean
-          detected_items: boolean
-          conflict_type: string
-          checked_at: string
-        }
-        Insert: {
-          id?: string
-          seat_id: string
-          reserved_by?: string | null
-          detected_person: boolean
-          detected_items: boolean
-          conflict_type: string
-          checked_at?: string
-        }
-        Update: {
-          id?: string
-          seat_id?: string
-          reserved_by?: string | null
-          detected_person?: boolean
-          detected_items?: boolean
-          conflict_type?: string
-          checked_at?: string
-        }
-        Relationships: []
-      }
-      seat_roi_configs: {
-        Row: {
-          id: number
-          seat_label: string
-          camera_id: string
-          points: Json
-          updated_at: string
-        }
-        Insert: {
-          id?: number
-          seat_label: string
-          camera_id?: string
-          points: Json
-          updated_at?: string
-        }
-        Update: {
-          id?: number
-          seat_label?: string
-          camera_id?: string
-          points?: Json
-          updated_at?: string
         }
         Relationships: []
       }

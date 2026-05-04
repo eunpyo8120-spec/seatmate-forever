@@ -29,14 +29,14 @@ export const useReservations = () => {
     }
 
     // Build seat statuses from reservations
-    const floors = ['2', '4', '4N'];
+    // Get current statuses template (all available)
+    const currentStatuses = useAppStore.getState().seatStatuses || {};
     const updatedStatuses: Record<string, Record<number, SeatStatus>> = {};
 
-    // Get current statuses template (all available)
-    const currentStatuses = useAppStore.getState().seatStatuses;
-    floors.forEach(floor => {
+    Object.keys(currentStatuses).forEach(floor => {
       updatedStatuses[floor] = {};
-      Object.keys(currentStatuses[floor] || {}).forEach(key => {
+      const floorSeats = currentStatuses[floor] || {};
+      Object.keys(floorSeats).forEach(key => {
         updatedStatuses[floor][Number(key)] = 'available';
       });
     });
