@@ -8,6 +8,7 @@ import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
 import { Floor4SeatMap } from '@/components/Floor4SeatMap';
 import { Floor4NSeatMap } from '@/components/Floor4NSeatMap';
+import { FloorTestSeatMap } from '@/components/FloorTestSeatMap';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -115,6 +116,8 @@ const SeatsPage = () => {
         <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
       ) : currentFloor === '4' ? (
         <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+      ) : currentFloor === 'TEST' ? (
+        <FloorTestSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
       ) : (
         <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
       )}

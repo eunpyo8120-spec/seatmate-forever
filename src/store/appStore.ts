@@ -32,6 +32,7 @@ const floor4NSeats = [
   ...Array.from({ length: 27 }, (_, i) => i + 101),
   ...Array.from({ length: 6 }, (_, i) => i + 201),
 ];
+const floorTestSeats = [122, 123, 125, 127];
 
 const initialNotifications: Notification[] = [
   { id: '1', type: 'info', title: '공지사항', message: '도서관 이용시간이 변경되었습니다. (09:00 ~ 22:00)', time: '10분 전', read: false },
@@ -49,6 +50,7 @@ export const useAppStore = create<AppState>((set) => ({
     '2': generateSeatStatuses(floor2Seats),
     '4': generateSeatStatuses(floor4Seats),
     '4N': generateSeatStatuses(floor4NSeats),
+    'TEST': generateSeatStatuses(floorTestSeats),
   },
   notifications: initialNotifications,
   login: (studentId, name, isAdmin) => set({ isLoggedIn: true, studentId, userName: name, isAdmin }),

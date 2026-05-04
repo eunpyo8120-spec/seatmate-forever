@@ -101,9 +101,10 @@ const MainPage = () => {
           <h2 className="font-display font-semibold text-foreground mb-3">열람실 선택</h2>
           <div className="space-y-3">
             {[
-              { floor: '2', name: '2층 1열람실', total: getTotalCount('2'), available: getAvailableCount('2') },
-              { floor: '4', name: '4층 2열람실', total: getTotalCount('4'), available: getAvailableCount('4') },
-              { floor: '4N', name: '4층 노상일열람실', total: getTotalCount('4N'), available: getAvailableCount('4N') },
+              { floor: '2', badge: '2F', name: '2층 1열람실', total: getTotalCount('2'), available: getAvailableCount('2') },
+              { floor: '4', badge: '4F', name: '4층 2열람실', total: getTotalCount('4'), available: getAvailableCount('4') },
+              { floor: '4N', badge: '4NF', name: '4층 노상일열람실', total: getTotalCount('4N'), available: getAvailableCount('4N') },
+              { floor: 'TEST', badge: 'TEST', name: '테스트 열람실 (N구역)', total: getTotalCount('TEST'), available: getAvailableCount('TEST') },
             ].map(room => (
               <motion.button
                 key={room.floor}
@@ -113,7 +114,7 @@ const MainPage = () => {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <span className="font-display font-bold text-primary text-sm">{room.floor}F</span>
+                    <span className="font-display font-bold text-primary text-sm">{room.badge}</span>
                   </div>
                   <div>
                     <p className="font-display font-semibold text-foreground">{room.name}</p>
