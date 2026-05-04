@@ -323,7 +323,7 @@ export default function AdminCalibratePage() {
   // ── Supabase 저장 ────────────────────────────────────────────────────
   const saveRois = async () => {
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('seat_roi_configs')
       .upsert(
         rois.map(r => ({ ...r, updated_at: new Date().toISOString() })),
