@@ -15,7 +15,7 @@ const Cell = ({ id, statuses, onSeatClick, selectedSeats, label }: { id: number;
   <SeatCell number={id} label={label} status={statuses[id] || 'available'} onClick={() => onSeatClick(id)} size="sm" selected={selectedSeats?.has(id)} />
 );
 
-const NGroup = ({ ids, standalone, statuses, onSeatClick, selectedSeats }: { ids: [number, number, number, number]; standalone: number; statuses: Record<number, SeatStatus>; onSeatClick: (n: number) => void; selectedSeats?: Set<number> }) => (
+const NGroup = ({ ids, standalone, statuses, onSeatClick, selectedSeats }: { ids: [number, number, number, number]; standalone?: number; statuses: Record<number, SeatStatus>; onSeatClick: (n: number) => void; selectedSeats?: Set<number> }) => (
   <div className="flex gap-1 items-center border border-border rounded-md p-1.5">
     <div className="flex flex-col gap-0.5">
       <div className="flex gap-0.5">
@@ -27,7 +27,9 @@ const NGroup = ({ ids, standalone, statuses, onSeatClick, selectedSeats }: { ids
         <Cell id={ids[3]} label={nLabel(ids[3])} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
       </div>
     </div>
-    <Cell id={standalone} label={nLabel(standalone)} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
+    {standalone !== undefined && (
+      <Cell id={standalone} label={nLabel(standalone)} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
+    )}
   </div>
 );
 
@@ -51,8 +53,8 @@ export const Floor4NSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props) 
           {/* Left: N-seat groups */}
           <div className="flex flex-col gap-6">
             <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">그룹스터디룸</div>
-            {/* N27,N25,N23,N22 + N21 */}
-            <NGroup ids={[127, 125, 123, 122]} standalone={121} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
+            {/* N23,N27 / N22,N25 — 카메라 모니터링 좌석 */}
+            <NGroup ids={[123, 127, 122, 125]} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
             {/* N19,N20,N18,N17 + N16 */}
             <NGroup ids={[119, 120, 118, 117]} standalone={116} statuses={statuses} onSeatClick={onSeatClick} selectedSeats={selectedSeats} />
             {/* N14,N15,N13,N12 + N11 */}

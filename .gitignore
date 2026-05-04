@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Backend secrets & large files
+backend/.env
+backend/yolov8n.pt
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
