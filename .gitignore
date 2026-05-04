@@ -14,7 +14,9 @@ dist-ssr
 
 # Backend secrets & large files
 backend/.env
-backend/yolov8n.pt
+backend/*.pt
+backend/data/
+backend/runs/
 supabase/.temp/
 
 # Editor directories and files
