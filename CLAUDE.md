@@ -2,7 +2,7 @@
 
 > 이 파일은 Claude와의 대화 내용을 기반으로 생성된 프로젝트 컨텍스트 문서입니다.
 > 새 대화에서 이 파일을 첨부하면 Claude가 프로젝트 전체 맥락을 즉시 파악합니다.
-> 최종 업데이트: 2026-05-04
+> 최종 업데이트: 2026-05-05
 
 ---
 
@@ -54,46 +54,18 @@
 
 ---
 
-## 데이터베이스 스키마 (public)
+## 주요 테이블 스키마
 
-### `seats`
+### `seats` (핵심)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | `id` | bigint (PK) | 좌석 ID |
 | `seat_number` | text | 좌석 번호 |
-| `status` | text | 상태 (available / occupied / ghost 등) |
+| `status` | text | available / occupied / ghost |
 | `has_person` | boolean | 사람 감지 여부 |
 | `has_items` | boolean | 물건 감지 여부 |
 | `last_updated` | timestamptz | 마지막 업데이트 시각 |
-
-### `OccupancyLogs` ⚠️ 구형 스키마 — 현재 존재 여부 미확인
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| `id` | uuid (PK) | 로그 ID |
-| `seat_id` | bigint (FK → seats.id) | 좌석 참조 |
-| `event_type` | text | 이벤트 종류 |
-| `created_at` | timestamptz | 이벤트 발생 시각 |
-| `user_id` | uuid (FK → profiles.id) | 담당 사용자 |
-
-### `Settings` ⚠️ 구형 스키마 — 현재 존재 여부 미확인
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| `key` | text (PK) | 설정 키 |
-| `value` | integer | 설정값 |
-
-### `users` ⚠️ 구형 스키마 — 현재 존재 여부 미확인 (현재는 `reservations` 사용)
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| `id` | bigint (PK) | 세션 ID |
-| `user_id` | uuid (FK → profiles.id) | 사용자 참조 |
-| `seat_id` | bigint (FK → seats.id) | 좌석 참조 |
-| `start_time` | timestamptz | 사용 시작 |
-| `end_time` | timestamptz | 사용 종료 |
-| `is_active` | boolean | 활성 여부 |
 
 ### `profiles`
 
@@ -103,7 +75,8 @@
 | `student_id` | text (unique) | 학번 |
 | `full_name` | text | 이름 |
 | `department` | text | 학과/트랙 |
-| `created_at` | timestamptz | 가입 시각 |
+
+> ⚠️ 구형 테이블 (`OccupancyLogs`, `Settings`, `users`) 존재 여부 미확인 — 현재는 `reservations`, `detection_logs`, `occupancy_conflict_logs` 사용
 
 ---
 
@@ -215,23 +188,6 @@ seat_detector.py 이전 버전. EMA 필터 + bottom-center 사람 감지 방식.
 
 ---
 
-## seat_monitor.py 동작 흐름
-
-1. 시작 시 Supabase `seat_roi_configs`에서 폴리곤 로드 (없으면 기본 5분할 사용)
-2. FastAPI 스레드 (localhost:8000) 시작 — AdminCalibratePage가 `/frame`으로 카메라 피드 수신
-3. RTSP 스트림 → YOLOv8 추론
-4. 바운딩박스 중심점 → `cv2.pointPolygonTest`로 좌석 판별
-5. 10초마다: `detection_logs` + `occupancy_conflict_logs` INSERT, `seats` UPDATE
-
-### 기본 폴리곤 구역 (normalized 0~1, AdminCalibratePage 미저장 시 사용)
-- N23 (좌상단): `[0,0]→[0.5,0]→[0.5,0.5]→[0,0.5]`
-- N27 (우상단): `[0.5,0]→[1,0]→[1,0.5]→[0.5,0.5]`
-- N22 (좌중단): `[0,0.5]→[0.5,0.5]→[0.5,0.75]→[0,0.75]`
-- N25 (우중단): `[0.5,0.5]→[1,0.5]→[1,0.75]→[0.5,0.75]`
-- N21 (하단): `[0,0.75]→[1,0.75]→[1,1]→[0,1]`
-
----
-
 ## AdminCalibratePage 폴리곤 편집기 사용법
 
 - **클릭**: 좌석 선택
@@ -242,51 +198,6 @@ seat_detector.py 이전 버전. EMA 필터 + bottom-center 사람 감지 방식.
 - `seat_monitor.py` 재시작 시 자동으로 폴리곤 로드
 
 ---
-
-## 컴포넌트 연결 방법
-
-### Lovable ↔ Supabase
-
-```typescript
-import { createClient } from '@supabase/supabase-js'
-
-export const supabase = createClient(
-  'https://iqmitoyfcsowzejbpxvo.supabase.co',
-  'ANON_KEY'  // Settings > API > anon key
-)
-
-// 좌석 실시간 구독
-supabase
-  .channel('seats')
-  .on('postgres_changes', {
-    event: 'UPDATE',
-    schema: 'public',
-    table: 'seats'
-  }, (payload) => {
-    updateSeatUI(payload.new)
-  })
-  .subscribe()
-```
-
-### 계정 생성 방법 (auth.users 직접 삽입)
-
-```sql
-INSERT INTO auth.users (
-  id, email, encrypted_password,
-  confirmed_at,
-  raw_app_meta_data, raw_user_meta_data,
-  created_at, updated_at, aud, role
-) VALUES (
-  gen_random_uuid(),
-  '학번@hanyang.ac.kr',
-  crypt('비밀번호', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}'::jsonb,
-  '{"student_id":"학번","full_name":"이름","department":"학과"}'::jsonb,
-  now(), now(), 'authenticated', 'authenticated'
-);
--- handle_new_user 트리거가 profiles 자동 생성
-```
 
 ---
 
