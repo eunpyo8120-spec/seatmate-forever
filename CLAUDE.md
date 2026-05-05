@@ -163,40 +163,55 @@ YOLOv8n 모델 추론 (사람 / 물건 감지)
 Lovable 프론트 Realtime 반영
 ```
 
-### seat_monitor_v2.py (신형 — YOLOv8-Pose 자동 캘리브레이션)
+### seat_detector.py (최신 메인 — 책상 물건 기준 + 확정 지연)
 ```
-[최초 1회] python seat_monitor_v2.py --calibrate
+[최초 1회] python seat_detector.py --calibrate
     ↓
 YOLOv8s-Pose(best.pt)로 좌석 4개 코너(TL/TR/BR/BL) 자동 감지
     ↓
 calibration.npz 저장 (좌석별 픽셀 좌표 폴리곤)
 
-[이후 매 실행] python seat_monitor_v2.py
+[이후 매 실행] python seat_detector.py
     ↓
 calibration.npz 로드
     ↓
 YOLOv8n 추론 (사람 / 물건 감지)
     ↓
-사람: bottom-center 좌표 → 좌석 폴리곤 판별 (오탐 감소)
-물건: bbox 중심 → 좌석 폴리곤 판별
+사람: 중심점 → 좌석 폴리곤 판별
+물건(책상 한정): bottom-center → 좌석 폴리곤 판별
+  └→ 폴리곤 외부면: 2축 판별(좌/우+앞/뒤)로 가장 가까운 좌석 배정
     ↓
-EMA 필터 (α=0.3) → 프레임 간 노이즈 제거
+확정 지연 필터 (CONFIRM_SEC=3초) → 동일 상태 3초 유지 시만 DB 반영
+    ↓
+좌석 상태 판단:
+  책상 물건 없음         → auto_return  (사람 유무 무관 — 악용 방지)
+  책상 물건 있음 + 사람  → occupied
+  책상 물건 있음 + 사람 없음 → reserved
     ↓
 10초마다 Supabase 업데이트
     ↓ (detection_logs INSERT / seats UPDATE)
 Lovable 프론트 Realtime 반영
 ```
 
+### seat_monitor_v2.py (중간 버전 참조용)
+```
+seat_detector.py 이전 버전. EMA 필터 + bottom-center 사람 감지 방식.
+현재는 seat_detector.py를 사용하며, v2는 비교/참조용으로만 유지.
+```
+
 ---
 
-## 좌석 상태 판별 로직
+## 좌석 상태 판별 로직 (seat_detector.py 기준)
 
-| 사람 | 물건 | 판정 | 처리 |
-|------|------|------|------|
-| ❌ | ❌ | 빈 좌석 (미반납) | 반납 처리 + 경고 부과 |
-| ❌ | ✅ | 물건만 있음 | 4시간 미만 → 자율위원회 관리 / 4시간 이상 → 분실물 처리 + 알림 |
-| ✅ | ❌ | 사람만 있음 | 예약 마감 10분 전 알림 |
-| ✅ | ✅ | 정상 사용 중 | 유지 |
+> 악용 방지 원칙: 의자 위 소지품은 점유 인정 안 함 — **책상 위 물건만** 기준
+
+| 책상 물건 | 사람 | 판정 | DB 상태 | 처리 |
+|----------|------|------|---------|------|
+| ❌ | 무관 | **auto_return** | available | 즉시 자동반납 |
+| ✅ | ❌ | **reserved** | ghost | 잠시 자리 비움 (물건으로 자리 맡음) |
+| ✅ | ✅ | **occupied** | occupied | 정상 사용 중 |
+
+> 3초 확정 지연: 순간 오감지로 인한 잦은 DB 업데이트 방지
 
 ---
 
@@ -290,8 +305,9 @@ INSERT INTO auth.users (
 
 | 파일 | 상태 | 비고 |
 |------|------|------|
-| `seat_monitor.py` | ✅ 사용 | 메인 모니터링 (정적 폴리곤 방식) |
-| `seat_monitor_v2.py` | ✅ 완료 | 신형 모니터링 (YOLOv8-Pose 자동 캘리브레이션 + EMA) |
+| `seat_monitor.py` | ✅ 유지 | 구형 모니터링 (정적 폴리곤 방식) |
+| `seat_monitor_v2.py` | ✅ 완료 | 중간 버전 (YOLOv8-Pose + EMA 필터) |
+| `seat_detector.py` | ✅ 완료 | **최신 메인** (책상 물건 기준 판단 + 확정 지연 필터) |
 | `collect_frames.py` | ✅ 완료 | RTSP 학습용 프레임 수집 도구 |
 | `label_seats.py` | ✅ 완료 | 좌석 코너 키포인트 라벨링 GUI |
 | `train_pose.py` | ✅ 완료 | YOLOv8s-Pose 파인튜닝 스크립트 |
@@ -315,8 +331,9 @@ INSERT INTO auth.users (
 - [x] YOLOv8-Pose 학습 데이터 수집 (`collect_frames.py`, 200프레임)
 - [x] 좌석 코너 키포인트 라벨링 (`label_seats.py`, N22/N23/N25/N27 × TL/TR/BR/BL)
 - [x] YOLOv8s-Pose 파인튜닝 (`train_pose.py`, mAP50=0.995)
-- [x] `seat_monitor_v2.py` 구현 (자동 캘리브레이션 + EMA 필터 + bottom-center 판별)
-- [ ] 실제 카메라(Tapo C200)로 파이프라인 테스트 (`--calibrate` → 일반 실행)
+- [x] `seat_monitor_v2.py` 구현 (자동 캘리브레이션 + EMA 필터)
+- [x] `seat_detector.py` 구현 (책상 물건 기준 판단 + 3초 확정 지연 + 가장 가까운 좌석 배정)
+- [ ] 실제 카메라(Tapo C200)로 `seat_detector.py` 테스트 (`--calibrate` → 일반 실행)
 
 ### 프론트엔드
 - [ ] NotificationsPage — Supabase 실제 연동 (현재 Zustand 더미 데이터)
