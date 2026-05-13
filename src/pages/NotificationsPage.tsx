@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store/appStore';
+import { useNotifications } from '@/hooks/useNotifications';
 import { BottomNav } from '@/components/BottomNav';
 import { CheckCircle, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ const iconColorMap = {
 };
 
 const NotificationsPage = () => {
+  const { loading } = useNotifications();
   const { notifications, markNotificationRead } = useAppStore();
 
   return (
@@ -27,7 +29,11 @@ const NotificationsPage = () => {
       </div>
 
       <div className="divide-y divide-border">
-        {notifications.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground font-body">불러오는 중...</p>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground font-body">알림이 없습니다</p>
           </div>

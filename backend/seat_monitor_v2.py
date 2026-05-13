@@ -45,10 +45,16 @@ RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.17.239.85/str
 # ── 상수 ──────────────────────────────────────────────────────────────────
 SEATS        = ["N22", "N23", "N25", "N27"]   # class 0,1,2,3 (label_seats.py 기준)
 ITEM_LABELS  = {"backpack", "handbag", "laptop", "book", "cup", "bottle", "bag", "suitcase"}
-LOG_INTERVAL = 10    # 초마다 Supabase 저장
-IMG_W, IMG_H = 960, 720
-EMA_ALPHA    = 0.3   # EMA 가중치 (낮을수록 느리게 반응, 높을수록 빠르게 반응)
-EMA_THRESH   = 0.5   # 이 값 초과 시 True로 판정
+LOG_INTERVAL  = 10   # 초마다 Supabase 저장
+IMG_W, IMG_H  = 960, 720
+EMA_ALPHA     = 0.3  # 점유 EMA 가중치
+EMA_THRESH    = 0.5  # 이 값 초과 시 True로 판정
+
+# 실시간 코너 캘리브레이션
+CORNER_EMA_ALPHA   = 0.05  # 코너 EMA (낮을수록 안정적, ~20프레임에 수렴)
+CORNER_CONF_THRESH = 0.7   # 포즈 감지 최소 신뢰도
+CORNER_KP_THRESH   = 0.4   # 키포인트 visibility 최소값
+CALIB_SAVE_INTERVAL = 30   # calibration.npz 자동 저장 주기 (초)
 
 SEAT_COLORS = {
     "N22": (34,  197,  94),   # 초록
@@ -363,15 +369,15 @@ def main():
     # ── 모니터링 모드 ────────────────────────────────────────────────────
     calib = load_calibration()
     if calib:
-        seat_polygons = calib
-        print(f"캘리브레이션 로드: {CALIB_FILE}")
+        corner_ema = calib
+        print(f"캘리브레이션 로드: {CALIB_FILE} — 실시간 보정 계속 진행")
     else:
-        print("[경고] calibration.npz 없음 → 기본 폴리곤 사용")
-        print("       더 정확한 감지를 위해 --calibrate 실행을 권장합니다")
-        seat_polygons = {
+        print("[시작] calibration.npz 없음 — 기본 폴리곤으로 시작, 실시간 캘리브레이션 자동 진행")
+        corner_ema = {
             seat: np.array([[p[0] * IMG_W, p[1] * IMG_H] for p in pts], dtype=np.float32)
             for seat, pts in DEFAULT_POLYGONS.items()
         }
+    seat_polygons = {s: c.copy() for s, c in corner_ema.items()}
 
     _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -388,7 +394,8 @@ def main():
     print("-" * 55)
 
     seat_results: dict[str, tuple[bool, bool]] = {seat: (False, False) for seat in SEATS}
-    last_log = time.time()
+    last_log        = time.time()
+    last_calib_save = time.time()
 
     while True:
         ret, frame = cap.read()
@@ -435,10 +442,36 @@ def main():
                 if seat:
                     frame_raw[seat]["items"] = True
 
-        # EMA 업데이트
+        # EMA 업데이트 (점유 상태)
         for seat in SEATS:
             seat_results[seat] = ema_update(seat,
                 frame_raw[seat]["person"], frame_raw[seat]["items"])
+
+        # 실시간 코너 캘리브레이션 — 빈 좌석에서 pose 모델로 코너 EMA 업데이트
+        pose_results = pose_model(frame, verbose=False)[0]
+        n_pose = len(pose_results.boxes) if pose_results.boxes is not None else 0
+        for i in range(n_pose):
+            cls  = int(pose_results.boxes.cls[i])
+            conf = float(pose_results.boxes.conf[i])
+            if conf < CORNER_CONF_THRESH or cls >= len(SEATS):
+                continue
+            seat = SEATS[cls]
+            has_person, has_items = seat_results[seat]
+            if has_person or has_items:
+                continue  # 사람/짐 있으면 코너 업데이트 안 함
+            kp_data = pose_results.keypoints.data[i].cpu().numpy()
+            if kp_data[:, 2].min() < CORNER_KP_THRESH:
+                continue
+            new_corners = kp_data[:, :2].astype(np.float32)
+            corner_ema[seat] = (CORNER_EMA_ALPHA * new_corners +
+                                (1.0 - CORNER_EMA_ALPHA) * corner_ema[seat])
+            seat_polygons[seat] = corner_ema[seat]
+
+        # calibration.npz 자동 저장 (30초마다)
+        if time.time() - last_calib_save >= CALIB_SAVE_INTERVAL:
+            last_calib_save = time.time()
+            np.savez(str(CALIB_FILE), **corner_ema)
+            print(f"  → 캘리브레이션 자동 저장됨")
 
         # Supabase 로그 전송 (10초마다, 비블로킹)
         if time.time() - last_log >= LOG_INTERVAL:

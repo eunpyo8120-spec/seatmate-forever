@@ -21,7 +21,9 @@ import os
 import threading
 import time
 import numpy as np
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+KST = timezone(timedelta(hours=9))
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -35,7 +37,6 @@ import uvicorn
 load_dotenv()
 
 BASE       = Path(__file__).parent
-POSE_MODEL = BASE / "runs" / "pose" / "seat" / "weights" / "best.pt"
 CALIB_FILE = BASE / "calibration.npz"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -111,74 +112,6 @@ def find_rtsp() -> cv2.VideoCapture | None:
     return None
 
 
-# ── 캘리브레이션 ──────────────────────────────────────────────────────────
-def run_calibration(pose_model: YOLO, cap: cv2.VideoCapture, n_frames: int) -> bool:
-    print(f"\n=== 캘리브레이션 모드 ({n_frames}프레임) ===")
-    print("  좌석은 비워두세요 (사람/짐 없이) | q: 취소\n")
-
-    corner_accum: dict[str, list[np.ndarray]] = {seat: [] for seat in SEATS}
-    collected = 0
-
-    while collected < n_frames:
-        ret, frame = cap.read()
-        if not ret:
-            time.sleep(0.1)
-            continue
-        frame = cv2.resize(frame, (IMG_W, IMG_H))
-        results = pose_model(frame, verbose=False)[0]
-        n_dets = len(results.boxes) if results.boxes is not None else 0
-
-        for i in range(n_dets):
-            cls  = int(results.boxes.cls[i])
-            conf = float(results.boxes.conf[i])
-            if conf < 0.7 or cls >= len(SEATS):
-                continue
-            kp_data = results.keypoints.data[i].cpu().numpy()
-            if kp_data[:, 2].min() < 0.3:
-                continue
-            corner_accum[SEATS[cls]].append(kp_data[:, :2])
-
-        collected += 1
-        pct = int(collected / n_frames * 100)
-        bar = "█" * (pct // 5) + "░" * (20 - pct // 5)
-        detected = [s for s in SEATS if corner_accum[s]]
-        print(f"\r  [{bar}] {pct:3d}%  감지: {detected}", end="", flush=True)
-
-        vis = frame.copy()
-        for seat in SEATS:
-            if corner_accum[seat]:
-                avg = np.mean(corner_accum[seat], axis=0).astype(np.int32)
-                color = SEAT_COLORS[seat]
-                cv2.polylines(vis, [avg.reshape(-1, 1, 2)], True, color, 2)
-                cx, cy = int(avg[:, 0].mean()), int(avg[:, 1].mean())
-                cv2.putText(vis, seat, (cx - 15, cy),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        cv2.imshow("Calibration — q: 취소", vis)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            return False
-
-    cv2.destroyAllWindows()
-    print()
-
-    calibration = {}
-    for seat in SEATS:
-        if corner_accum[seat]:
-            calibration[seat] = np.mean(corner_accum[seat], axis=0)
-        else:
-            print(f"  [경고] {seat} 미감지 → 기본 폴리곤 사용")
-            calibration[seat] = np.array(
-                [[p[0] * IMG_W, p[1] * IMG_H] for p in DEFAULT_POLYGONS[seat]],
-                dtype=np.float32,
-            )
-
-    np.savez(str(CALIB_FILE), **{s: calibration[s] for s in SEATS})
-    print(f"\n캘리브레이션 완료! → {CALIB_FILE}")
-    for seat, corners in calibration.items():
-        c = corners.astype(int)
-        print(f"  {seat}: TL{c[0].tolist()} TR{c[1].tolist()} BR{c[2].tolist()} BL{c[3].tolist()}")
-    return True
-
 
 def load_calibration() -> dict[str, np.ndarray] | None:
     if not CALIB_FILE.exists():
@@ -215,9 +148,9 @@ def confirm_update(seat: str, has_person: bool, has_items: bool) -> tuple[bool, 
 
 # ── 좌석 상태 판단 ────────────────────────────────────────────────────────
 def determine_status(has_person: bool, has_items: bool) -> str:
-    if not has_items:  return "auto_return"
-    if has_person:     return "occupied"
-    return "reserved"
+    if has_person:  return "occupied"    # 사람 있으면 무조건 사용중
+    if has_items:   return "reserved"    # 물건만 있으면 자리맡음 (ghost)
+    return "auto_return"                 # 아무것도 없으면 자동반납
 
 
 # ── 시각화 ────────────────────────────────────────────────────────────────
@@ -250,7 +183,7 @@ def draw_seats(frame: np.ndarray,
 # ── Supabase ──────────────────────────────────────────────────────────────
 def _get_active_reservations() -> dict[str, str]:
     try:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(KST).isoformat()
         result = _supabase.table("reservations") \
             .select("seat_number, user_id") \
             .eq("is_active", True) \
@@ -275,7 +208,7 @@ def _get_active_reservations() -> dict[str, str]:
 
 def send_logs(seat_results: dict[str, tuple[bool, bool]]) -> None:
     try:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(KST).isoformat()
         reservations = _get_active_reservations()
         detection_rows, conflict_rows = [], []
 
@@ -318,29 +251,19 @@ def main():
 
     parser = argparse.ArgumentParser(description="좌석 감지기 (책상 물건 기준 판단)")
     parser.add_argument("--calibrate", action="store_true",
-                        help="캘리브레이션 모드: 빈 좌석에서 코너 자동 감지")
-    parser.add_argument("--calib-frames", type=int, default=30)
+                        help="캘리브레이션 안내 출력 (실제 캘리브레이션: calibrate_color.py)")
     args = parser.parse_args()
 
     print("=" * 55)
     print("  좌석 감지기 — 책상 물건 기준 자동반납")
     print("=" * 55)
 
-    if not POSE_MODEL.exists():
-        print(f"ERROR: best.pt 없음 → python train_pose.py 먼저 실행")
-        return
-
-    pose_model = YOLO(str(POSE_MODEL))
-    det_model  = YOLO("yolov8n.pt")
+    det_model = YOLO("yolov8n.pt")
 
     if args.calibrate:
-        cap = find_rtsp()
-        if cap is None:
-            return
-        success = run_calibration(pose_model, cap, args.calib_frames)
-        cap.release()
-        if success:
-            print("\n다음: python seat_detector.py")
+        print("색깔 종이 캘리브레이션을 사용하세요:")
+        print("  N22=빨강  N23=파랑  N25=노랑  N27=초록")
+        print("  python calibrate_color.py")
         return
 
     calib = load_calibration()
