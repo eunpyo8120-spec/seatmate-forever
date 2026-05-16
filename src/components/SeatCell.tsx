@@ -6,7 +6,7 @@ interface SeatCellProps {
   label?: string;
   status: SeatStatus;
   onClick?: () => void;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   selected?: boolean;
 }
 
@@ -19,7 +19,7 @@ const statusClasses: Record<SeatStatus, string> = {
 };
 
 export const SeatCell = ({ number, label, status, onClick, size = 'md', selected }: SeatCellProps) => {
-  const sizeClass = size === 'sm' ? 'w-8 h-7 text-[10px]' : 'w-10 h-8 text-xs';
+  const sizeClass = size === 'sm' ? 'w-8 h-7 text-[10px]' : size === 'lg' ? 'w-20 h-16 text-base' : 'w-10 h-8 text-xs';
   const displayLabel = label || String(number);
   
   return (
