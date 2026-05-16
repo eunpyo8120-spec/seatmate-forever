@@ -17,7 +17,7 @@ export const FloorTestSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props
       label={nLabel(id)}
       status={statuses[id] || 'available'}
       onClick={() => onSeatClick(id)}
-      size="sm"
+      size="lg"
       selected={selectedSeats?.has(id)}
     />
   );
@@ -28,12 +28,12 @@ export const FloorTestSeatMap = ({ statuses, onSeatClick, selectedSeats }: Props
         <div className="text-[10px] font-display font-semibold text-muted-foreground mb-1">
           테스트 좌석 (카메라 모니터링)
         </div>
-        <div className="border border-border rounded-md p-3 inline-flex flex-col gap-0.5">
-          <div className="flex gap-0.5">
+        <div className="border border-border rounded-md p-4 inline-flex flex-col gap-2">
+          <div className="flex gap-2">
             {cell(123)}
             {cell(127)}
           </div>
-          <div className="flex gap-0.5">
+          <div className="flex gap-2">
             {cell(122)}
             {cell(125)}
           </div>
