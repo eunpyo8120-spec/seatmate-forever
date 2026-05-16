@@ -186,7 +186,7 @@ const SeatsPage = () => {
       </Dialog>
 
       {/* Seat Detail Dialog (TEST floor) */}
-      <Dialog open={seatDetail !== null} onOpenChange={() => setSeatDetail(null)}>
+      <Dialog open={seatDetailNum !== null} onOpenChange={() => { setSeatDetail(null); setSeatDetailNum(null); }}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle className="font-display">좌석 센서 정보</DialogTitle>
@@ -223,7 +223,7 @@ const SeatsPage = () => {
             <p className="text-sm font-body text-muted-foreground">DB에 데이터 없음</p>
           )}
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setSeatDetail(null)} className="flex-1">닫기</Button>
+            <Button variant="outline" onClick={() => { setSeatDetail(null); setSeatDetailNum(null); }} className="flex-1">닫기</Button>
             {seatDetailNum !== null && statuses[seatDetailNum] === 'available' && !mySeat && !isAdmin && (
               <Button
                 className="flex-1"
