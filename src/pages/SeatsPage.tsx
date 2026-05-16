@@ -89,6 +89,7 @@ const SeatsPage = () => {
             { key: '2', label: '2층' },
             { key: '4', label: '4층' },
             { key: '4N', label: '노상일' },
+            { key: 'TEST', label: 'TEST' },
           ].map(f => (
             <button
               key={f.key}

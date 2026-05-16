@@ -135,9 +135,9 @@ export const useReservations = () => {
       return;
     }
 
-    if (current) {
+      if (current) {
       const seatLabel = getSeatLabel(current.seat_number);
-      const { data: seatRow } = await supabase
+      const { data: seatRow } = await (supabase as any)
         .from('seats')
         .select('has_items')
         .eq('seat_number', seatLabel)
@@ -147,20 +147,20 @@ export const useReservations = () => {
         if (!seatRow.has_items) {
           // Case A: 물건 없음 — 10초 후 available
           setTimeout(async () => {
-            await supabase
+            await (supabase as any)
               .from('seats')
               .update({ status: 'available' })
               .eq('seat_number', seatLabel);
           }, 10_000);
         } else {
           // Case B: 물건 있음 — 즉시 managed
-          await supabase
+          await (supabase as any)
             .from('seats')
             .update({ status: 'managed' })
             .eq('seat_number', seatLabel);
           // Case C: 30초 후 lost_item
           setTimeout(async () => {
-            await supabase
+            await (supabase as any)
               .from('seats')
               .update({ status: 'lost_item' })
               .eq('seat_number', seatLabel);
