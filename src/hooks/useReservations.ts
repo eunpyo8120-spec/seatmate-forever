@@ -12,6 +12,7 @@ export const useReservations = () => {
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
 
   const fetchReservations = useCallback(async () => {
+    if (!user) return;
     // Expire overdue reservations before fetching
     await supabase
       .from('reservations')
