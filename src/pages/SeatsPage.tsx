@@ -31,6 +31,7 @@ const SeatsPage = () => {
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [adminTarget, setAdminTarget] = useState<number | null>(null);
   const [seatDetail, setSeatDetail] = useState<SeatRow | null>(null);
+  const [seatDetailNum, setSeatDetailNum] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const currentFloor = floor || '2';
@@ -42,6 +43,7 @@ const SeatsPage = () => {
       const seatLabel = `N${seatNum - 100}`;
       const row = seats.find(s => s.seat_number === seatLabel) ?? null;
       setSeatDetail(row);
+      setSeatDetailNum(seatNum);
       return;
     }
     const status = statuses[seatNum];
@@ -220,8 +222,31 @@ const SeatsPage = () => {
           ) : (
             <p className="text-sm font-body text-muted-foreground">DB에 데이터 없음</p>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSeatDetail(null)} className="w-full">닫기</Button>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setSeatDetail(null)} className="flex-1">닫기</Button>
+            {seatDetailNum !== null && statuses[seatDetailNum] === 'available' && !mySeat && !isAdmin && (
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setSeatDetail(null);
+                  setSelectedSeat(seatDetailNum);
+                }}
+              >
+                배정하기
+              </Button>
+            )}
+            {seatDetailNum !== null && isAdmin && (statuses[seatDetailNum] === 'occupied' || statuses[seatDetailNum] === 'mine') && (
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => {
+                  setSeatDetail(null);
+                  setAdminTarget(seatDetailNum);
+                }}
+              >
+                퇴실 처리
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
