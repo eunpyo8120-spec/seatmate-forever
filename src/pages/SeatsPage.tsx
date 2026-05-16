@@ -112,15 +112,17 @@ const SeatsPage = () => {
       </div>
 
       {/* Seat Map */}
-      {currentFloor === '2' ? (
-        <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
-      ) : currentFloor === '4' ? (
-        <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
-      ) : currentFloor === 'TEST' ? (
-        <FloorTestSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
-      ) : (
-        <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
-      )}
+      <div className="flex justify-center">
+        {currentFloor === '2' ? (
+          <Floor2SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+        ) : currentFloor === '4' ? (
+          <Floor4SeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+        ) : currentFloor === 'TEST' ? (
+          <FloorTestSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+        ) : (
+          <Floor4NSeatMap statuses={statuses} onSeatClick={handleSeatClick} />
+        )}
+      </div>
 
       {/* Admin Checkout Dialog */}
       <Dialog open={adminTarget !== null} onOpenChange={() => setAdminTarget(null)}>
