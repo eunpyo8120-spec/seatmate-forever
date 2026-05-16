@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
+import { useSeats, type SeatRow } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
@@ -26,8 +27,10 @@ const SeatsPage = () => {
   const navigate = useNavigate();
   const { seatStatuses, mySeat, isAdmin } = useAppStore();
   const { reserveSeat, adminCheckoutSeat } = useReservations();
+  const { seats } = useSeats();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [adminTarget, setAdminTarget] = useState<number | null>(null);
+  const [seatDetail, setSeatDetail] = useState<SeatRow | null>(null);
   const [loading, setLoading] = useState(false);
 
   const currentFloor = floor || '2';
@@ -35,6 +38,12 @@ const SeatsPage = () => {
   const floorName = currentFloor === '2' ? '2층 1열람실' : currentFloor === '4' ? '4층 2열람실' : '4층 노상일열람실';
 
   const handleSeatClick = (seatNum: number) => {
+    if (currentFloor === 'TEST') {
+      const seatLabel = `N${seatNum - 100}`;
+      const row = seats.find(s => s.seat_number === seatLabel) ?? null;
+      setSeatDetail(row);
+      return;
+    }
     const status = statuses[seatNum];
     if (isAdmin && (status === 'occupied' || status === 'mine')) {
       setAdminTarget(seatNum);
@@ -169,6 +178,49 @@ const SeatsPage = () => {
             <Button onClick={confirmReservation} className="flex-1" disabled={loading}>
               {loading ? '처리중...' : '배정하기'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Seat Detail Dialog (TEST floor) */}
+      <Dialog open={seatDetail !== null} onOpenChange={() => setSeatDetail(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="font-display">좌석 센서 정보</DialogTitle>
+            <DialogDescription className="font-body">
+              {seatDetail?.seat_number} — 실시간 감지 데이터
+            </DialogDescription>
+          </DialogHeader>
+          {seatDetail ? (
+            <div className="space-y-2 text-sm font-body">
+              <div className="flex justify-between border-b border-border pb-1">
+                <span className="text-muted-foreground">상태</span>
+                <span className="font-semibold font-display">
+                  {seatDetail.status === 'available' ? '사용가능' :
+                   seatDetail.status === 'occupied' ? '이용중' :
+                   seatDetail.status === 'ghost' ? '고스트' : seatDetail.status}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-border pb-1">
+                <span className="text-muted-foreground">사람 감지</span>
+                <span>{seatDetail.has_person ? '✅ 있음' : '❌ 없음'}</span>
+              </div>
+              <div className="flex justify-between border-b border-border pb-1">
+                <span className="text-muted-foreground">물건 감지</span>
+                <span>{seatDetail.has_items ? '✅ 있음' : '❌ 없음'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">마지막 업데이트</span>
+                <span className="text-xs text-right">
+                  {new Date(seatDetail.last_updated).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm font-body text-muted-foreground">DB에 데이터 없음</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSeatDetail(null)} className="w-full">닫기</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
 import { BottomNav } from '@/components/BottomNav';
@@ -6,6 +6,7 @@ import { MapPin, Clock, Plus, LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
 const MySeatPage = () => {
@@ -14,6 +15,11 @@ const MySeatPage = () => {
   const navigate = useNavigate();
   const [remaining, setRemaining] = useState('');
   const [loading, setLoading] = useState(false);
+  const toastFiredRef = useRef(false);
+
+  useEffect(() => {
+    toastFiredRef.current = false;
+  }, [mySeat]);
 
   useEffect(() => {
     if (!mySeat) return;
@@ -27,6 +33,11 @@ const MySeatPage = () => {
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setRemaining(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+
+      if (diff <= 60000 && !toastFiredRef.current) {
+        toastFiredRef.current = true;
+        toast.warning('예약종료 1분전', { description: '좌석 연장 또는 퇴실을 진행해주세요.' });
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [mySeat]);

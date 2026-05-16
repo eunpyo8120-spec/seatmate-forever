@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      seats: {
+        Row: {
+          seat_number: string
+          status: string
+          has_person: boolean
+          has_items: boolean
+          last_updated: string
+        }
+        Insert: {
+          seat_number: string
+          status?: string
+          has_person?: boolean
+          has_items?: boolean
+          last_updated?: string
+        }
+        Update: {
+          seat_number?: string
+          status?: string
+          has_person?: boolean
+          has_items?: boolean
+          last_updated?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           created_at: string

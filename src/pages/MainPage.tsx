@@ -2,7 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useReservations } from '@/hooks/useReservations';
+import { useSeats } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
+import { SeatStatusTable } from '@/components/SeatStatusTable';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -11,6 +13,7 @@ const MainPage = () => {
   const { userName, mySeat, seatStatuses } = useAppStore();
   const { signOut } = useAuth();
   const { checkoutSeat } = useReservations();
+  const { seats, loading: seatsLoading } = useSeats();
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {
@@ -127,6 +130,11 @@ const MainPage = () => {
               </motion.button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <h2 className="font-display font-semibold text-foreground mb-3">카메라 모니터링 좌석</h2>
+          <SeatStatusTable seats={seats} loading={seatsLoading} />
         </div>
       </div>
 

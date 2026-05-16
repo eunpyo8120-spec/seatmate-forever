@@ -67,6 +67,9 @@ DEFAULT_POLYGONS = {
 _latest_frame: np.ndarray | None = None
 _frame_lock = threading.Lock()
 _supabase: Client | None = None
+_last_cleanup = 0.0        # 마지막 로그 정리 시각
+CLEANUP_INTERVAL = 3600.0  # 1시간마다 정리
+LOG_RETENTION_HOURS = 24   # 24시간 이상 된 로그 삭제
 
 # 확정 지연 필터 상태
 _filter_state = {
@@ -206,8 +209,23 @@ def _get_active_reservations() -> dict[str, str]:
         return {}
 
 
+def _cleanup_old_logs() -> None:
+    global _last_cleanup
+    if time.time() - _last_cleanup < CLEANUP_INTERVAL:
+        return
+    try:
+        cutoff = (datetime.now(KST) - timedelta(hours=LOG_RETENTION_HOURS)).isoformat()
+        _supabase.table("detection_logs").delete().lt("detected_at", cutoff).execute()
+        _supabase.table("occupancy_conflict_logs").delete().lt("checked_at", cutoff).execute()
+        _last_cleanup = time.time()
+        print(f"  → 오래된 로그 정리 완료 ({LOG_RETENTION_HOURS}시간 이전 삭제)")
+    except Exception as e:
+        print(f"  → 로그 정리 실패: {e}")
+
+
 def send_logs(seat_results: dict[str, tuple[bool, bool]]) -> None:
     try:
+        _cleanup_old_logs()
         now = datetime.now(KST).isoformat()
         reservations = _get_active_reservations()
         detection_rows, conflict_rows = [], []
