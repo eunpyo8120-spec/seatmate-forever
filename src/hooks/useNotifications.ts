@@ -54,7 +54,7 @@ export function useNotifications() {
       // 사석화 경고 (활성 예약 좌석이 ghost 상태)
       if (activeRes && activeRes.floor === '4N') {
         const seatLabel = `N${activeRes.seat_number}`;
-        const { data: seat } = await (supabase as any)
+        const { data: seat } = await supabase
           .from('seats')
           .select('status')
           .eq('seat_number', seatLabel)

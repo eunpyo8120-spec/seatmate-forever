@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/store/appStore';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +48,6 @@ function pointToSegmentDist(px: number, py: number, ax: number, ay: number, bx: 
 // ── コンポーネント ─────────────────────────────────────────────────────────
 export default function AdminCalibratePage() {
   const navigate = useNavigate();
-  const { isAdmin } = useAppStore();
 
   const [serverUrl, setServerUrl] = useState('http://localhost:8000');
   const [polling, setPolling] = useState(false);
@@ -68,12 +66,11 @@ export default function AdminCalibratePage() {
   const dragging = useRef<{ seat: string; idx: number } | null>(null);
   const dragStart = useRef({ mx: 0, my: 0, ox: 0, oy: 0 });
 
-  useEffect(() => { if (!isAdmin) navigate('/main'); }, [isAdmin, navigate]);
 
   // Supabase에서 ROI 로드
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from('seat_roi_configs')
         .select('seat_label,camera_id,points')
         .eq('camera_id', 'main');
@@ -323,7 +320,7 @@ export default function AdminCalibratePage() {
   // ── Supabase 저장 ────────────────────────────────────────────────────
   const saveRois = async () => {
     setSaving(true);
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('seat_roi_configs')
       .upsert(
         rois.map(r => ({ ...r, updated_at: new Date().toISOString() })),

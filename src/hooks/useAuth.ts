@@ -10,6 +10,7 @@ export const useAuth = () => {
   const logout = useAppStore(s => s.logout);
 
   useEffect(() => {
+    // onAuthStateChange fires INITIAL_SESSION on mount — getSession 중복 불필요
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const u = session?.user ?? null;
@@ -21,31 +22,17 @@ export const useAuth = () => {
             .then(({ data }) => {
               const name = data?.display_name || studentId;
               login(studentId, name, isAdmin);
+              setLoading(false);
             });
         } else {
           logout();
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        const studentId = u.user_metadata?.student_id || '';
-        const isAdmin = studentId.startsWith('9999');
-        supabase.from('profiles').select('display_name').eq('student_id', studentId).single()
-          .then(({ data }) => {
-            const name = data?.display_name || studentId;
-            login(studentId, name, isAdmin);
-          });
-      }
-      setLoading(false);
-    });
-
     return () => subscription.unsubscribe();
-  }, []);
+  }, [login, logout]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

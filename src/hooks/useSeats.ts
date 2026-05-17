@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 
-export interface SeatRow {
-  seat_number: string;
-  status: string;
-  has_person: boolean;
-  has_items: boolean;
-  last_updated: string;
-}
+export type SeatRow = Tables<'seats'>;
 
 export function useSeats() {
   const [seats, setSeats] = useState<SeatRow[]>([]);
@@ -17,13 +12,13 @@ export function useSeats() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('seats')
         .select('*')
         .order('seat_number');
 
       if (!error && data) {
-        setSeats(data as SeatRow[]);
+        setSeats(data);
       }
       setLoading(false);
     }

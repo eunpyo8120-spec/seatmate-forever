@@ -2,7 +2,6 @@ import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
 import { useAuth } from './useAuth';
-import { getSeatLabel } from '@/lib/seatLabel';
 import type { SeatStatus } from '@/types/seat';
 
 export const useReservations = () => {
@@ -13,17 +12,12 @@ export const useReservations = () => {
 
   const fetchReservations = useCallback(async () => {
     if (!user) return;
-    // Expire overdue reservations before fetching
-    await supabase
-      .from('reservations')
-      .update({ is_active: false })
-      .eq('is_active', true)
-      .lt('end_time', new Date().toISOString());
 
     const { data, error } = await supabase
       .from('reservations')
       .select('*')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .gt('end_time', new Date().toISOString());
 
     if (error) {
       console.error('Failed to fetch reservations:', error);
@@ -111,6 +105,15 @@ export const useReservations = () => {
   const reserveSeat = async (floor: string, seatNumber: number) => {
     if (!user) return { error: 'Not authenticated' };
 
+    const { data: existing } = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (existing) return { error: '이미 예약된 좌석이 있습니다' };
+
     const now = new Date();
     const endTime = new Date(now.getTime() + 10 * 60 * 1000);
 
@@ -150,40 +153,6 @@ export const useReservations = () => {
     if (error) {
       console.error('Checkout failed:', error);
       return;
-    }
-
-      if (current) {
-      const seatLabel = getSeatLabel(current.seat_number);
-      const { data: seatRow } = await (supabase as any)
-        .from('seats')
-        .select('has_items')
-        .eq('seat_number', seatLabel)
-        .single();
-
-      if (seatRow) {
-        if (!seatRow.has_items) {
-          // Case A: 물건 없음 — 10초 후 available
-          setTimeout(async () => {
-            await (supabase as any)
-              .from('seats')
-              .update({ status: 'available' })
-              .eq('seat_number', seatLabel);
-          }, 10_000);
-        } else {
-          // Case B: 물건 있음 — 즉시 managed
-          await (supabase as any)
-            .from('seats')
-            .update({ status: 'managed' })
-            .eq('seat_number', seatLabel);
-          // Case C: 30초 후 lost_item
-          setTimeout(async () => {
-            await (supabase as any)
-              .from('seats')
-              .update({ status: 'lost_item' })
-              .eq('seat_number', seatLabel);
-          }, 30_000);
-        }
-      }
     }
 
     await fetchReservations();

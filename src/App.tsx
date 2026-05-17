@@ -12,6 +12,7 @@ import AdminCalibratePage from "./pages/AdminCalibratePage";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 import { useReservations } from "./hooks/useReservations";
+import { useAppStore } from "./store/appStore";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">로딩중...</div>;
   if (!user) return <Navigate to="/" replace />;
+  return <ReservationSync>{children}</ReservationSync>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const isAdmin = useAppStore(s => s.isAdmin);
+  if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">로딩중...</div>;
+  if (!user) return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/main" replace />;
   return <ReservationSync>{children}</ReservationSync>;
 };
 
@@ -47,7 +57,7 @@ const App = () => (
           <Route path="/seats/:floor" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
           <Route path="/my-seat" element={<ProtectedRoute><MySeatPage /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-          <Route path="/admin/calibrate" element={<ProtectedRoute><AdminCalibratePage /></ProtectedRoute>} />
+          <Route path="/admin/calibrate" element={<AdminRoute><AdminCalibratePage /></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
