@@ -1,17 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
+import { useSeats } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
-import { MapPin, Clock, Plus, LogOut as LogOutIcon } from 'lucide-react';
+import { MapPin, Clock, Plus, LogOut as LogOutIcon, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
+const STATUS_LABEL: Record<string, string> = {
+  available: '사용가능',
+  occupied: '이용중',
+  ghost: '고스트',
+  managed: '관리중',
+  lost_item: '분실물',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  available: 'text-green-600 bg-green-50',
+  occupied: 'text-blue-600 bg-blue-50',
+  ghost: 'text-orange-600 bg-orange-50',
+  managed: 'text-purple-600 bg-purple-50',
+  lost_item: 'text-red-600 bg-red-50',
+};
+
 const MySeatPage = () => {
-  const { mySeat } = useAppStore();
+  const { mySeat, reservationsLoaded } = useAppStore();
   const { checkoutSeat, extendSeat } = useReservations();
+  const { seats } = useSeats();
   const navigate = useNavigate();
   const [remaining, setRemaining] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,6 +65,15 @@ const MySeatPage = () => {
     const m = date.getMinutes().toString().padStart(2, '0');
     return `${h}:${m}`;
   };
+
+  if (!reservationsLoaded) {
+    return (
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (!mySeat) {
     return (
@@ -103,6 +130,45 @@ const MySeatPage = () => {
             <span>입실: {formatTime(mySeat.startTime)} | 퇴실예정: {formatTime(mySeat.endTime)}</span>
           </div>
         </div>
+
+        {(() => {
+          const seatLabel = getSeatLabel(mySeat.seatNumber);
+          const seatRow = seats.find(s => s.seat_number === seatLabel);
+          return (
+            <div className="bg-card rounded-xl p-5 border border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <Wifi className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-display font-semibold text-foreground">센서 감지 현황</span>
+              </div>
+              {seatRow ? (
+                <div className="space-y-2 text-sm font-body">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">좌석 상태</span>
+                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${STATUS_COLOR[seatRow.status] ?? 'text-foreground bg-muted'}`}>
+                      {STATUS_LABEL[seatRow.status] ?? seatRow.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">사람 감지</span>
+                    <span>{seatRow.has_person ? '✅ 있음' : '❌ 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">물건 감지</span>
+                    <span>{seatRow.has_items ? '✅ 있음' : '❌ 없음'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">마지막 업데이트</span>
+                    <span className="text-xs text-right">
+                      {new Date(seatRow.last_updated).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-body text-muted-foreground">센서 미연결 ({seatLabel})</p>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="space-y-3">
           <Button

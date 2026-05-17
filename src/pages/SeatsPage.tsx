@@ -228,8 +228,10 @@ const SeatsPage = () => {
               <Button
                 className="flex-1"
                 onClick={() => {
+                  const num = seatDetailNum;
                   setSeatDetail(null);
-                  setSelectedSeat(seatDetailNum);
+                  setSeatDetailNum(null);
+                  setSelectedSeat(num);
                 }}
               >
                 배정하기
@@ -240,8 +242,10 @@ const SeatsPage = () => {
                 variant="destructive"
                 className="flex-1"
                 onClick={() => {
+                  const num = seatDetailNum;
                   setSeatDetail(null);
-                  setAdminTarget(seatDetailNum);
+                  setSeatDetailNum(null);
+                  setAdminTarget(num);
                 }}
               >
                 퇴실 처리

@@ -9,6 +9,7 @@ interface AppState {
   mySeat: { floor: string; seatNumber: number; startTime: Date; endTime: Date } | null;
   seatStatuses: Record<string, Record<number, SeatStatus>>;
   notifications: Notification[];
+  reservationsLoaded: boolean;
   login: (studentId: string, name: string, isAdmin: boolean) => void;
   logout: () => void;
   setSeatStatuses: (statuses: Record<string, Record<number, SeatStatus>>) => void;
@@ -48,8 +49,9 @@ export const useAppStore = create<AppState>((set) => ({
     'TEST': generateSeatStatuses(floorTestSeats),
   },
   notifications: [],
+  reservationsLoaded: false,
   login: (studentId, name, isAdmin) => set({ isLoggedIn: true, studentId, userName: name, isAdmin }),
-  logout: () => set({ isLoggedIn: false, userName: '', studentId: '', isAdmin: false, mySeat: null }),
+  logout: () => set({ isLoggedIn: false, userName: '', studentId: '', isAdmin: false, mySeat: null, reservationsLoaded: false }),
   setSeatStatuses: (statuses) => set({ seatStatuses: statuses }),
   setMySeat: (seat) => set({ mySeat: seat }),
   setNotifications: (notifications) => set({ notifications }),

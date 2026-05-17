@@ -7,9 +7,9 @@ import type { SeatStatus } from '@/types/seat';
 
 export const useReservations = () => {
   const { user } = useAuth();
-  const setSeatStatuses = useAppStore(s => s.setSeatStatuses);
-  const setMySeat = useAppStore(s => s.setMySeat);
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
+  const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchReservationsRef = useRef<() => Promise<void>>(async () => {});
 
   const fetchReservations = useCallback(async () => {
     if (!user) return;
@@ -57,20 +57,33 @@ export const useReservations = () => {
       }
     });
 
-    setSeatStatuses(updatedStatuses);
+    // Atomic update — prevents intermediate render where seatStatuses updated but mySeat stale
+    const r = myReservation as typeof data[0] | null;
+    useAppStore.setState({
+      seatStatuses: updatedStatuses,
+      mySeat: r
+        ? { floor: r.floor, seatNumber: r.seat_number, startTime: new Date(r.start_time), endTime: new Date(r.end_time) }
+        : null,
+      reservationsLoaded: true,
+    });
 
-    if (myReservation) {
-      const r = myReservation as typeof data[0];
-      setMySeat({
-        floor: r.floor,
-        seatNumber: r.seat_number,
-        startTime: new Date(r.start_time),
-        endTime: new Date(r.end_time),
-      });
-    } else {
-      setMySeat(null);
+    // Auto-expiry timer: re-fetch when reservation end_time is reached
+    if (expiryTimerRef.current) {
+      clearTimeout(expiryTimerRef.current);
+      expiryTimerRef.current = null;
     }
-  }, [user, setSeatStatuses, setMySeat]);
+    if (r) {
+      const delay = new Date(r.end_time).getTime() - Date.now();
+      if (delay > 0) {
+        expiryTimerRef.current = setTimeout(() => fetchReservationsRef.current(), delay + 1000);
+      }
+    }
+  }, [user]);
+
+  // Keep ref pointing to latest fetchReservations (used by expiry timer)
+  useEffect(() => {
+    fetchReservationsRef.current = fetchReservations;
+  }, [fetchReservations]);
 
   // Subscribe to realtime changes
   useEffect(() => {
@@ -89,6 +102,9 @@ export const useReservations = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+      }
     };
   }, [fetchReservations]);
 
