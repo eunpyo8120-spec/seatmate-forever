@@ -22,6 +22,7 @@ import threading
 import time
 import numpy as np
 from datetime import datetime, timezone, timedelta
+from typing import Optional, Dict, Tuple, List
 
 KST = timezone(timedelta(hours=9))
 from pathlib import Path
@@ -45,7 +46,7 @@ RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.17.239.85/str
 
 SEATS        = ["N22", "N23", "N25", "N27"]
 # 책상 위 물건만 감지 (의자 위 소지품은 점유로 인정하지 않음)
-ITEM_LABELS  = {"laptop", "keyboard", "book", "cup", "backpack", "bag", "cell phone", "tv", "mouse"}
+ITEM_LABELS  = {"laptop", "keyboard", "book", "cup", "backpack", "bag", "cell phone", "mouse", "bottle"}
 LOG_INTERVAL = 10     # 초마다 Supabase 저장
 IMG_W, IMG_H = 960, 720
 CONFIRM_SEC  = 3.0    # 동일 상태 유지 시간(초) — 이 이상 유지돼야 DB 반영
@@ -64,9 +65,9 @@ DEFAULT_POLYGONS = {
     "N25": [[0.5, 0.5], [1.0, 0.5], [1.0, 1.0], [0.5, 1.0]],
 }
 
-_latest_frame: np.ndarray | None = None
+_latest_frame: Optional[np.ndarray] = None
 _frame_lock = threading.Lock()
-_supabase: Client | None = None
+_supabase: Optional[Client] = None
 _last_cleanup = 0.0        # 마지막 로그 정리 시각
 CLEANUP_INTERVAL = 3600.0  # 1시간마다 정리
 LOG_RETENTION_HOURS = 24   # 24시간 이상 된 로그 삭제
@@ -101,7 +102,7 @@ def _start_frame_server():
 
 
 # ── RTSP 연결 ─────────────────────────────────────────────────────────────
-def find_rtsp() -> cv2.VideoCapture | None:
+def find_rtsp() -> Optional[cv2.VideoCapture]:
     print(f"RTSP 연결 시도: {RTSP_URL}")
     cap = cv2.VideoCapture(RTSP_URL)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -116,7 +117,7 @@ def find_rtsp() -> cv2.VideoCapture | None:
 
 
 
-def load_calibration() -> dict[str, np.ndarray] | None:
+def load_calibration() -> Optional[Dict[str, np.ndarray]]:
     if not CALIB_FILE.exists():
         return None
     data = np.load(str(CALIB_FILE))
@@ -125,19 +126,17 @@ def load_calibration() -> dict[str, np.ndarray] | None:
 
 # ── 좌석 판별 ─────────────────────────────────────────────────────────────
 def get_seat_for_point(px: float, py: float,
-                       seat_polygons: dict[str, np.ndarray]) -> str:
-    """폴리곤 내부 → 해당 좌석, 외부 → 2축 판별(좌/우+앞/뒤)로 가장 가까운 좌석"""
+                       seat_polygons: Dict[str, np.ndarray]) -> Optional[str]:
+    """폴리곤 내부 → 해당 좌석, 외부 → None"""
     for seat_id, poly in seat_polygons.items():
         pts = poly.reshape(-1, 1, 2).astype(np.float32)
         if cv2.pointPolygonTest(pts, (float(px), float(py)), False) >= 0:
             return seat_id
-    return min(seat_polygons.keys(),
-               key=lambda s: np.hypot(px - seat_polygons[s][:, 0].mean(),
-                                      py - seat_polygons[s][:, 1].mean()))
+    return None
 
 
 # ── 확정 지연 필터 ────────────────────────────────────────────────────────
-def confirm_update(seat: str, has_person: bool, has_items: bool) -> tuple[bool, bool]:
+def confirm_update(seat: str, has_person: bool, has_items: bool) -> Tuple[bool, bool]:
     """동일 상태가 CONFIRM_SEC 이상 유지돼야 confirmed 상태 갱신"""
     s = _filter_state[seat]
     new_buf = (has_person, has_items)
@@ -157,11 +156,11 @@ def determine_status(has_person: bool, has_items: bool) -> str:
 
 
 # ── 시각화 ────────────────────────────────────────────────────────────────
-_STATUS_KO = {"occupied": "사용중", "reserved": "자리맡음", "auto_return": "자동반납"}
+_STATUS_EN = {"occupied": "occupied", "reserved": "reserved", "auto_return": "available"}
 
 def draw_seats(frame: np.ndarray,
-               seat_polygons: dict[str, np.ndarray],
-               seat_results: dict[str, tuple[bool, bool]]) -> None:
+               seat_polygons: Dict[str, np.ndarray],
+               seat_results: Dict[str, Tuple[bool, bool]]) -> None:
     for seat_id, poly in seat_polygons.items():
         has_person, has_items = seat_results.get(seat_id, (False, False))
         status = determine_status(has_person, has_items)
@@ -176,7 +175,7 @@ def draw_seats(frame: np.ndarray,
 
         cx = int(poly[:, 0].mean())
         cy = int(poly[:, 1].mean())
-        label = f"{seat_id}: {_STATUS_KO[status]}"
+        label = f"{seat_id}: {_STATUS_EN[status]}"
         cv2.putText(frame, label, (cx - 45, cy),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(frame, label, (cx - 45, cy),
@@ -184,7 +183,7 @@ def draw_seats(frame: np.ndarray,
 
 
 # ── Supabase ──────────────────────────────────────────────────────────────
-def _get_active_reservations() -> dict[str, str]:
+def _get_active_reservations() -> Dict[str, str]:
     try:
         now = datetime.now(KST).isoformat()
         result = _supabase.table("reservations") \
@@ -223,7 +222,7 @@ def _cleanup_old_logs() -> None:
         print(f"  → 로그 정리 실패: {e}")
 
 
-def send_logs(seat_results: dict[str, tuple[bool, bool]]) -> None:
+def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
     try:
         _cleanup_old_logs()
         now = datetime.now(KST).isoformat()
@@ -276,7 +275,7 @@ def main():
     print("  좌석 감지기 — 책상 물건 기준 자동반납")
     print("=" * 55)
 
-    det_model = YOLO("yolov8n.pt")
+    det_model = YOLO("yolov8s.pt")
 
     if args.calibrate:
         print("색깔 종이 캘리브레이션을 사용하세요:")
@@ -310,8 +309,9 @@ def main():
     for seat in SEATS:
         _filter_state[seat]["since"] = time.time()
 
-    seat_results: dict[str, tuple[bool, bool]] = {seat: (False, False) for seat in SEATS}
-    last_log = time.time()
+    seat_results: Dict[str, Tuple[bool, bool]] = {seat: (False, False) for seat in SEATS}
+    last_log   = time.time()
+    last_print = 0.0
 
     while True:
         ret, frame = cap.read()
@@ -329,7 +329,8 @@ def main():
             _latest_frame = frame.copy()
 
         det_results = det_model(frame, verbose=False)[0]
-        frame_raw = {seat: {"person": False, "items": False} for seat in SEATS}
+        frame_raw   = {seat: {"person": False, "items": False} for seat in SEATS}
+        seat_labels = {seat: {"person": False, "items": []} for seat in SEATS}
 
         for box in det_results.boxes:
             cls   = int(box.cls[0])
@@ -340,33 +341,62 @@ def main():
             x1, y1, x2, y2 = map(int, box.xyxy[0])
 
             if label == "person":
-                # 사람: 중심점 → 의자(좌석) 구역 판별
                 px, py = (x1 + x2) / 2, (y1 + y2) / 2
                 seat = get_seat_for_point(px, py, seat_polygons)
-                frame_raw[seat]["person"] = True
+                if seat:
+                    frame_raw[seat]["person"] = True
+                    seat_labels[seat]["person"] = True
 
             elif label in ITEM_LABELS:
-                # 물건: bottom-center → 책상 접촉면 판별
                 px, py = (x1 + x2) / 2, float(y2)
                 seat = get_seat_for_point(px, py, seat_polygons)
-                frame_raw[seat]["items"] = True
+                if seat:
+                    frame_raw[seat]["items"] = True
+                    seat_labels[seat]["items"].append(label)
 
         for seat in SEATS:
             seat_results[seat] = confirm_update(
                 seat, frame_raw[seat]["person"], frame_raw[seat]["items"]
             )
 
+        now = time.time()
+        if now - last_print >= 1.0:
+            last_print = now
+            ts = time.strftime("%H:%M:%S")
+            parts = []
+            for s in SEATS:
+                p_str = "person" if seat_labels[s]["person"] else ""
+                i_str = ", ".join(seat_labels[s]["items"])
+                if p_str and i_str:
+                    detail = f"person+{i_str}"
+                elif p_str:
+                    detail = "person"
+                elif i_str:
+                    detail = i_str
+                else:
+                    detail = "empty"
+                parts.append(f"{s}:{detail}")
+            print(f"[{ts}]  " + "  |  ".join(parts))
+
         if time.time() - last_log >= LOG_INTERVAL:
             last_log = time.time()
-            ts = time.strftime("%H:%M:%S")
-            print(f"\n[{ts}] 로그 전송...")
-            for sid, (hp, hi) in seat_results.items():
-                print(f"  {sid}: {determine_status(hp, hi)}")
             threading.Thread(target=send_logs, args=(dict(seat_results),), daemon=True).start()
 
-        annotated = det_results.plot()
+        SHOW_LABELS = ITEM_LABELS | {"person"}
+        annotated = frame.copy()
+        for box in det_results.boxes:
+            cls   = int(box.cls[0])
+            label = det_model.names[cls]
+            conf  = float(box.conf[0])
+            if conf < 0.3 or label not in SHOW_LABELS:
+                continue
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            color = (0, 255, 0) if label == "person" else (255, 200, 0)
+            cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(annotated, f"{label} {conf:.0%}", (x1, y1 - 6),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv2.LINE_AA)
         draw_seats(annotated, seat_polygons, seat_results)
-        cv2.imshow("Seat Detector (q: 종료)", annotated)
+        cv2.imshow("Seat Detector (Q: quit)", annotated)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
