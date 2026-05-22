@@ -47,9 +47,10 @@ RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.17.239.85/str
 SEATS        = ["N22", "N23", "N25", "N27"]
 # 책상 위 물건만 감지 (의자 위 소지품은 점유로 인정하지 않음)
 ITEM_LABELS  = {"laptop", "keyboard", "book", "cup", "backpack", "bag", "cell phone", "mouse", "bottle"}
-LOG_INTERVAL = 10     # 초마다 Supabase 저장
-IMG_W, IMG_H = 960, 720
-CONFIRM_SEC  = 3.0    # 동일 상태 유지 시간(초) — 이 이상 유지돼야 DB 반영
+LOG_INTERVAL     = 10     # 초마다 Supabase 저장
+IMG_W, IMG_H     = 960, 720
+CONFIRM_SEC      = 5.0    # 동일 상태 유지 시간(초) — 이 이상 유지돼야 DB 반영
+AUTO_RETURN_SEC  = 10.0   # 이 시간 이상 비어있으면 예약 자동 취소
 
 SEAT_COLORS = {
     "N23": (245, 158,  11),   # 주황 (좌측 전방)
@@ -77,6 +78,9 @@ _filter_state = {
     seat: {"buf": (False, False), "confirmed": (False, False), "since": 0.0}
     for seat in SEATS
 }
+
+# 자동반납 타이머 (좌석별 auto_return 시작 시각)
+_auto_return_since: Dict[str, Optional[float]] = {seat: None for seat in SEATS}
 
 
 # ── FastAPI 프레임 서버 ────────────────────────────────────────────────────
@@ -133,6 +137,34 @@ def get_seat_for_point(px: float, py: float,
         if cv2.pointPolygonTest(pts, (float(px), float(py)), False) >= 0:
             return seat_id
     return None
+
+
+def get_seat_for_bbox(x1: int, y1: int, x2: int, y2: int,
+                      seat_polygons: Dict[str, np.ndarray],
+                      min_ratio: float = 0.2) -> Optional[str]:
+    """bbox와 ROI 폴리곤의 겹침 비율이 가장 큰 좌석 반환
+    min_ratio 이하이면 None (어느 좌석도 아님)
+    """
+    bbox_area = max((x2 - x1) * (y2 - y1), 1)
+    bbox_mask = np.zeros((IMG_H, IMG_W), dtype=np.uint8)
+    cv2.rectangle(bbox_mask, (x1, y1), (x2, y2), 255, -1)
+
+    best_seat  = None
+    best_ratio = min_ratio  # 이 값보다 커야 배정
+
+    for seat_id, poly in seat_polygons.items():
+        roi_mask = np.zeros((IMG_H, IMG_W), dtype=np.uint8)
+        pts = poly.reshape(-1, 1, 2).astype(np.int32)
+        cv2.fillPoly(roi_mask, [pts], 255)
+
+        overlap   = cv2.bitwise_and(bbox_mask, roi_mask)
+        ratio     = np.count_nonzero(overlap) / bbox_area
+
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_seat  = seat_id
+
+    return best_seat
 
 
 # ── 확정 지연 필터 ────────────────────────────────────────────────────────
@@ -193,7 +225,12 @@ def _get_active_reservations() -> Dict[str, str]:
             .gte("end_time", now).execute()
         reservations = {}
         for row in result.data:
-            seat_num = str(row["seat_number"])
+            raw = row["seat_number"]
+            # DB가 integer(25)든 string("N25")든 "N25" 형식으로 통일
+            if isinstance(raw, int):
+                seat_num = f"N{raw}"
+            else:
+                seat_num = str(raw) if str(raw).startswith("N") else f"N{raw}"
             try:
                 profile = _supabase.table("profiles") \
                     .select("student_id") \
@@ -220,6 +257,32 @@ def _cleanup_old_logs() -> None:
         print(f"  → 오래된 로그 정리 완료 ({LOG_RETENTION_HOURS}시간 이전 삭제)")
     except Exception as e:
         print(f"  → 로그 정리 실패: {e}")
+
+
+def _to_db_seat_num(seat_id: str):
+    """'N25' → 25  (DB seat_number 컬럼이 integer인 경우 대응)"""
+    try:
+        return int(seat_id.lstrip("N"))
+    except ValueError:
+        return seat_id  # 변환 실패 시 원본 그대로
+
+
+def cancel_reservation(seat_id: str) -> None:
+    """해당 좌석의 활성 예약을 자동 취소"""
+    try:
+        now = datetime.now(KST).isoformat()
+        db_seat = _to_db_seat_num(seat_id)
+        result = _supabase.table("reservations") \
+            .update({"is_active": False, "end_time": now}) \
+            .eq("seat_number", db_seat) \
+            .eq("is_active", True) \
+            .execute()
+        if result.data:
+            print(f"  → [{seat_id}] 자동반납 완료 (예약 취소)")
+        else:
+            print(f"  → [{seat_id}] 활성 예약 없음")
+    except Exception as e:
+        print(f"  → [{seat_id}] 자동반납 실패: {e}")
 
 
 def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
@@ -336,20 +399,18 @@ def main():
             cls   = int(box.cls[0])
             label = det_model.names[cls]
             conf  = float(box.conf[0])
-            if conf < 0.3:
+            if conf < 0.45:
                 continue
             x1, y1, x2, y2 = map(int, box.xyxy[0])
 
             if label == "person":
-                px, py = (x1 + x2) / 2, (y1 + y2) / 2
-                seat = get_seat_for_point(px, py, seat_polygons)
+                seat = get_seat_for_bbox(x1, y1, x2, y2, seat_polygons)
                 if seat:
                     frame_raw[seat]["person"] = True
                     seat_labels[seat]["person"] = True
 
             elif label in ITEM_LABELS:
-                px, py = (x1 + x2) / 2, float(y2)
-                seat = get_seat_for_point(px, py, seat_polygons)
+                seat = get_seat_for_bbox(x1, y1, x2, y2, seat_polygons)
                 if seat:
                     frame_raw[seat]["items"] = True
                     seat_labels[seat]["items"].append(label)
@@ -377,6 +438,20 @@ def main():
                     detail = "empty"
                 parts.append(f"{s}:{detail}")
             print(f"[{ts}]  " + "  |  ".join(parts))
+
+        # 자동반납 타이머 체크
+        for seat in SEATS:
+            has_person, has_items = seat_results[seat]
+            status = determine_status(has_person, has_items)
+            if status == "auto_return":
+                if _auto_return_since[seat] is None:
+                    _auto_return_since[seat] = time.time()
+                elif time.time() - _auto_return_since[seat] >= AUTO_RETURN_SEC:
+                    print(f"  → [{seat}] {AUTO_RETURN_SEC}초 이상 비어있음 → 자동반납 시도")
+                    threading.Thread(target=cancel_reservation, args=(seat,), daemon=True).start()
+                    _auto_return_since[seat] = None  # 중복 실행 방지
+            else:
+                _auto_return_since[seat] = None
 
         if time.time() - last_log >= LOG_INTERVAL:
             last_log = time.time()
