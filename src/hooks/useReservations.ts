@@ -1,11 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
-import { useAuth } from './useAuth';
+import { useAuthContext } from './useAuth';
 import type { SeatStatus } from '@/types/seat';
 
-export const useReservations = () => {
-  const { user } = useAuth();
+export const useReservations = ({ subscribe = true } = {}) => {
+  const { user } = useAuthContext();
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchReservationsRef = useRef<() => Promise<void>>(async () => {});
@@ -79,8 +79,10 @@ export const useReservations = () => {
     fetchReservationsRef.current = fetchReservations;
   }, [fetchReservations]);
 
-  // Subscribe to realtime changes
+  // Subscribe to realtime changes — only when subscribe=true (avoid duplicate subscriptions)
   useEffect(() => {
+    if (!subscribe) return;
+
     fetchReservations();
 
     const channel = supabase
@@ -100,7 +102,7 @@ export const useReservations = () => {
         clearTimeout(expiryTimerRef.current);
       }
     };
-  }, [fetchReservations]);
+  }, [fetchReservations, subscribe]);
 
   const reserveSeat = async (floor: string, seatNumber: number) => {
     if (!user) return { error: 'Not authenticated' };
@@ -110,9 +112,18 @@ export const useReservations = () => {
       .select('id')
       .eq('user_id', user.id)
       .eq('is_active', true)
+      .gt('end_time', new Date().toISOString())
       .maybeSingle();
 
     if (existing) return { error: '이미 예약된 좌석이 있습니다' };
+
+    // 만료된 active 예약 정리 (INSERT 충돌 방지)
+    await supabase
+      .from('reservations')
+      .update({ is_active: false })
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .lt('end_time', new Date().toISOString());
 
     const now = new Date();
     const endTime = new Date(now.getTime() + 10 * 60 * 1000);
@@ -158,8 +169,8 @@ export const useReservations = () => {
     await fetchReservations();
   };
 
-  const extendSeat = async () => {
-    if (!user) return;
+  const extendSeat = async (): Promise<{ error: string | null }> => {
+    if (!user) return { error: '로그인이 필요합니다' };
 
     const { data: current } = await supabase
       .from('reservations')
@@ -168,7 +179,7 @@ export const useReservations = () => {
       .eq('is_active', true)
       .single();
 
-    if (!current) return;
+    if (!current) return { error: '활성 예약이 없습니다' };
 
     const newEnd = new Date(new Date(current.end_time).getTime() + 2 * 60 * 60 * 1000);
 
@@ -177,12 +188,10 @@ export const useReservations = () => {
       .update({ end_time: newEnd.toISOString() })
       .eq('id', current.id);
 
-    if (error) {
-      console.error('Extend failed:', error);
-      return;
-    }
+    if (error) return { error: error.message };
 
     await fetchReservations();
+    return { error: null };
   };
 
   const adminCheckoutSeat = async (floor: string, seatNumber: number) => {

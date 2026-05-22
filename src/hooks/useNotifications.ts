@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
-import { useAuth } from './useAuth';
+import { useAuthContext } from './useAuth';
 import type { Notification } from '@/types/seat';
 
 function relativeTime(iso: string): string {
@@ -19,7 +19,7 @@ function floorLabel(floor: string): string {
 }
 
 export function useNotifications() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const setNotifications = useAppStore(s => s.setNotifications);
   const [loading, setLoading] = useState(true);
 

@@ -10,8 +10,8 @@ export function useSeats() {
   const channelName = useRef(`seats-realtime-${Math.random()}`);
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
+    async function load(showLoading = false) {
+      if (showLoading) setLoading(true);
       const { data, error } = await supabase
         .from('seats')
         .select('*')
@@ -20,17 +20,17 @@ export function useSeats() {
       if (!error && data) {
         setSeats(data);
       }
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
 
-    load();
+    load(true);
 
     const channel = supabase
       .channel(channelName.current)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'seats' },
-        () => { load(); }
+        () => { load(false); }
       )
       .subscribe();
 
