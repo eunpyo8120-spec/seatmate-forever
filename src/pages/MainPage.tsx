@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
 import { useAuthContext } from '@/hooks/useAuth';
 import { useReservations } from '@/hooks/useReservations';
-import { useSeats } from '@/hooks/useSeats';
+import { useSeatsContext } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatStatusTable } from '@/components/SeatStatusTable';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
@@ -13,7 +13,7 @@ const MainPage = () => {
   const { userName, mySeat, seatStatuses } = useAppStore();
   const { signOut } = useAuthContext();
   const { checkoutSeat } = useReservations({ subscribe: false });
-  const { seats, loading: seatsLoading } = useSeats();
+  const { seats, loading: seatsLoading } = useSeatsContext();
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {

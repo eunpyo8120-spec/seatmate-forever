@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
-import { useSeats } from '@/hooks/useSeats';
+import { useSeatsContext } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, Plus, LogOut as LogOutIcon, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ const STATUS_COLOR: Record<string, string> = {
 const MySeatPage = () => {
   const { mySeat, reservationsLoaded } = useAppStore();
   const { checkoutSeat, extendSeat } = useReservations({ subscribe: false });
-  const { seats } = useSeats();
+  const { seats } = useSeatsContext();
   const navigate = useNavigate();
   const [remaining, setRemaining] = useState('');
   const [loading, setLoading] = useState(false);
@@ -131,7 +131,7 @@ const MySeatPage = () => {
           </div>
         </div>
 
-        {(() => {
+        {mySeat.floor === 'TEST' && (() => {
           const seatLabel = getSeatLabel(mySeat.seatNumber);
           const seatRow = seats.find(s => s.seat_number === seatLabel);
           return (
@@ -164,7 +164,7 @@ const MySeatPage = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm font-body text-muted-foreground">센서 미연결 ({seatLabel})</p>
+                <p className="text-sm font-body text-muted-foreground">백엔드 미실행 — 감지 데이터 없음</p>
               )}
             </div>
           );
