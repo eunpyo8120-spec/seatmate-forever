@@ -131,7 +131,7 @@ const MySeatPage = () => {
           </div>
         </div>
 
-        {(() => {
+        {mySeat.floor === 'TEST' && (() => {
           const seatLabel = getSeatLabel(mySeat.seatNumber);
           const seatRow = seats.find(s => s.seat_number === seatLabel);
           return (
@@ -164,7 +164,7 @@ const MySeatPage = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm font-body text-muted-foreground">센서 미연결 ({seatLabel})</p>
+                <p className="text-sm font-body text-muted-foreground">백엔드 미실행 — 감지 데이터 없음</p>
               )}
             </div>
           );
