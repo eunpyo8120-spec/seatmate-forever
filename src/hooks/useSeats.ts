@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type SeatRow = Tables<'seats'>;
+
+interface SeatsContextType {
+  seats: SeatRow[];
+  loading: boolean;
+}
+
+export const SeatsContext = createContext<SeatsContextType>({ seats: [], loading: true });
+export const useSeatsContext = () => useContext(SeatsContext);
 
 export function useSeats() {
   const [seats, setSeats] = useState<SeatRow[]>([]);

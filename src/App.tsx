@@ -12,6 +12,7 @@ import AdminCalibratePage from "./pages/AdminCalibratePage";
 import NotFound from "./pages/NotFound";
 import { useAuth, useAuthContext, AuthContext } from "./hooks/useAuth";
 import { useReservations } from "./hooks/useReservations";
+import { useSeats, SeatsContext } from "./hooks/useSeats";
 import { useAppStore } from "./store/appStore";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,12 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 const ReservationSync = ({ children }: { children: React.ReactNode }) => {
   useReservations();
   return <>{children}</>;
+};
+
+// 앱 전체에서 seats 데이터를 한 번만 fetch — 페이지 전환 시 재fetch 없음
+const SeatsProvider = ({ children }: { children: React.ReactNode }) => {
+  const seatsData = useSeats();
+  return <SeatsContext.Provider value={seatsData}>{children}</SeatsContext.Provider>;
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -58,18 +65,20 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <ReservationSync>
-            <Routes>
-              <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
-              <Route path="/main" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
-              <Route path="/seats" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
-              <Route path="/seats/:floor" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
-              <Route path="/my-seat" element={<ProtectedRoute><MySeatPage /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-              <Route path="/admin/calibrate" element={<AdminRoute><AdminCalibratePage /></AdminRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ReservationSync>
+          <SeatsProvider>
+            <ReservationSync>
+              <Routes>
+                <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                <Route path="/main" element={<ProtectedRoute><MainPage /></ProtectedRoute>} />
+                <Route path="/seats" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
+                <Route path="/seats/:floor" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
+                <Route path="/my-seat" element={<ProtectedRoute><MySeatPage /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+                <Route path="/admin/calibrate" element={<AdminRoute><AdminCalibratePage /></AdminRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ReservationSync>
+          </SeatsProvider>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

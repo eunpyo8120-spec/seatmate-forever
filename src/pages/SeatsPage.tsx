@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
-import { useSeats, type SeatRow } from '@/hooks/useSeats';
+import { useSeatsContext, type SeatRow } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatLegend } from '@/components/SeatLegend';
 import { Floor2SeatMap } from '@/components/Floor2SeatMap';
@@ -27,7 +27,7 @@ const SeatsPage = () => {
   const navigate = useNavigate();
   const { seatStatuses, mySeat, isAdmin } = useAppStore();
   const { reserveSeat, adminCheckoutSeat } = useReservations({ subscribe: false });
-  const { seats } = useSeats();
+  const { seats } = useSeatsContext();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [adminTarget, setAdminTarget] = useState<number | null>(null);
   const [seatDetail, setSeatDetail] = useState<SeatRow | null>(null);
