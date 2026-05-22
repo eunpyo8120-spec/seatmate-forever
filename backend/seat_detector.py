@@ -42,7 +42,7 @@ CALIB_FILE = BASE / "calibration.npz"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.17.239.85/stream1")
+RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.63.75.85/stream1")
 
 SEATS        = ["N22", "N23", "N25", "N27"]
 # 책상 위 물건만 감지 (의자 위 소지품은 점유로 인정하지 않음)
@@ -250,10 +250,11 @@ def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
             # DB seats.status: occupied→occupied, reserved→ghost, auto_return→available
             db_status = {"occupied": "occupied", "reserved": "ghost",
                          "auto_return": "available"}[status]
-            _supabase.table("seats").update({
+            _supabase.table("seats").upsert({
+                "seat_number": seat_id,
                 "has_person": has_person, "has_items": has_items,
                 "status": db_status, "last_updated": now,
-            }).eq("seat_number", seat_id).execute()
+            }, on_conflict="seat_number").execute()
 
         _supabase.table("detection_logs").insert(detection_rows).execute()
         _supabase.table("occupancy_conflict_logs").insert(conflict_rows).execute()

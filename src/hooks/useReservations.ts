@@ -110,6 +110,7 @@ export const useReservations = () => {
       .select('id')
       .eq('user_id', user.id)
       .eq('is_active', true)
+      .gt('end_time', new Date().toISOString())
       .maybeSingle();
 
     if (existing) return { error: '이미 예약된 좌석이 있습니다' };
