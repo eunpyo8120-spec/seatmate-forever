@@ -226,9 +226,9 @@ def _get_active_reservations() -> Dict[str, str]:
         reservations = {}
         for row in result.data:
             raw = row["seat_number"]
-            # DB가 integer(25)든 string("N25")든 "N25" 형식으로 통일
+            # reservations.seat_number: integer 125 → "N25", string "N25" → 그대로
             if isinstance(raw, int):
-                seat_num = f"N{raw}"
+                seat_num = f"N{raw - 100}"   # 125 → "N25"
             else:
                 seat_num = str(raw) if str(raw).startswith("N") else f"N{raw}"
             try:
@@ -260,9 +260,9 @@ def _cleanup_old_logs() -> None:
 
 
 def _to_db_seat_num(seat_id: str):
-    """'N25' → 25  (DB seat_number 컬럼이 integer인 경우 대응)"""
+    """'N25' → 125  (reservations.seat_number: N구역은 101~127)"""
     try:
-        return int(seat_id.lstrip("N"))
+        return 100 + int(seat_id.lstrip("N"))
     except ValueError:
         return seat_id  # 변환 실패 시 원본 그대로
 
