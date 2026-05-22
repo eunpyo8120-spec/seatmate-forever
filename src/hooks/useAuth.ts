@@ -1,7 +1,21 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
 import type { User } from '@supabase/supabase-js';
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+}
+
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  signOut: async () => {},
+});
+
+export const useAuthContext = () => useContext(AuthContext);
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);

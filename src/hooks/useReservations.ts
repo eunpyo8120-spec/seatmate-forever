@@ -1,11 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
-import { useAuth } from './useAuth';
+import { useAuthContext } from './useAuth';
 import type { SeatStatus } from '@/types/seat';
 
 export const useReservations = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchReservationsRef = useRef<() => Promise<void>>(async () => {});

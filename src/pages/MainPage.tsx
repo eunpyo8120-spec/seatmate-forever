@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store/appStore';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/hooks/useAuth';
 import { useReservations } from '@/hooks/useReservations';
 import { useSeats } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 
 const MainPage = () => {
   const { userName, mySeat, seatStatuses } = useAppStore();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthContext();
   const { checkoutSeat } = useReservations();
   const { seats, loading: seatsLoading } = useSeats();
   const navigate = useNavigate();
