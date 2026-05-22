@@ -26,7 +26,7 @@ const SeatsPage = () => {
   const { floor } = useParams<{ floor: string }>();
   const navigate = useNavigate();
   const { seatStatuses, mySeat, isAdmin } = useAppStore();
-  const { reserveSeat, adminCheckoutSeat } = useReservations();
+  const { reserveSeat, adminCheckoutSeat } = useReservations({ subscribe: false });
   const { seats } = useSeats();
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [adminTarget, setAdminTarget] = useState<number | null>(null);

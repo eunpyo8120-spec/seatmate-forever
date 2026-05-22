@@ -4,7 +4,7 @@ import { useAppStore } from '@/store/appStore';
 import { useAuthContext } from './useAuth';
 import type { SeatStatus } from '@/types/seat';
 
-export const useReservations = () => {
+export const useReservations = ({ subscribe = true } = {}) => {
   const { user } = useAuthContext();
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,8 +79,10 @@ export const useReservations = () => {
     fetchReservationsRef.current = fetchReservations;
   }, [fetchReservations]);
 
-  // Subscribe to realtime changes
+  // Subscribe to realtime changes — only when subscribe=true (avoid duplicate subscriptions)
   useEffect(() => {
+    if (!subscribe) return;
+
     fetchReservations();
 
     const channel = supabase
@@ -100,7 +102,7 @@ export const useReservations = () => {
         clearTimeout(expiryTimerRef.current);
       }
     };
-  }, [fetchReservations]);
+  }, [fetchReservations, subscribe]);
 
   const reserveSeat = async (floor: string, seatNumber: number) => {
     if (!user) return { error: 'Not authenticated' };
@@ -114,6 +116,14 @@ export const useReservations = () => {
       .maybeSingle();
 
     if (existing) return { error: '이미 예약된 좌석이 있습니다' };
+
+    // 만료된 active 예약 정리 (INSERT 충돌 방지)
+    await supabase
+      .from('reservations')
+      .update({ is_active: false })
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .lt('end_time', new Date().toISOString());
 
     const now = new Date();
     const endTime = new Date(now.getTime() + 10 * 60 * 1000);

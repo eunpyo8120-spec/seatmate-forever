@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 const MainPage = () => {
   const { userName, mySeat, seatStatuses } = useAppStore();
   const { signOut } = useAuthContext();
-  const { checkoutSeat } = useReservations();
+  const { checkoutSeat } = useReservations({ subscribe: false });
   const { seats, loading: seatsLoading } = useSeats();
   const navigate = useNavigate();
 

@@ -28,7 +28,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 const MySeatPage = () => {
   const { mySeat, reservationsLoaded } = useAppStore();
-  const { checkoutSeat, extendSeat } = useReservations();
+  const { checkoutSeat, extendSeat } = useReservations({ subscribe: false });
   const { seats } = useSeats();
   const navigate = useNavigate();
   const [remaining, setRemaining] = useState('');
