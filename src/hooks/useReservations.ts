@@ -158,8 +158,8 @@ export const useReservations = () => {
     await fetchReservations();
   };
 
-  const extendSeat = async () => {
-    if (!user) return;
+  const extendSeat = async (): Promise<{ error: string | null }> => {
+    if (!user) return { error: '로그인이 필요합니다' };
 
     const { data: current } = await supabase
       .from('reservations')
@@ -168,7 +168,7 @@ export const useReservations = () => {
       .eq('is_active', true)
       .single();
 
-    if (!current) return;
+    if (!current) return { error: '활성 예약이 없습니다' };
 
     const newEnd = new Date(new Date(current.end_time).getTime() + 2 * 60 * 60 * 1000);
 
@@ -177,12 +177,10 @@ export const useReservations = () => {
       .update({ end_time: newEnd.toISOString() })
       .eq('id', current.id);
 
-    if (error) {
-      console.error('Extend failed:', error);
-      return;
-    }
+    if (error) return { error: error.message };
 
     await fetchReservations();
+    return { error: null };
   };
 
   const adminCheckoutSeat = async (floor: string, seatNumber: number) => {

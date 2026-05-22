@@ -172,7 +172,16 @@ const MySeatPage = () => {
 
         <div className="space-y-3">
           <Button
-            onClick={async () => { setLoading(true); await extendSeat(); setLoading(false); }}
+            onClick={async () => {
+              setLoading(true);
+              const { error } = await extendSeat();
+              setLoading(false);
+              if (error) {
+                toast.error('연장 실패: ' + error);
+              } else {
+                toast.success('2시간 연장되었습니다.');
+              }
+            }}
             variant="outline"
             className="w-full h-12 font-display font-semibold text-base"
             disabled={loading}
