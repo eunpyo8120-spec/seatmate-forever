@@ -268,21 +268,26 @@ def _to_db_seat_num(seat_id: str):
 
 
 def cancel_reservation(seat_id: str) -> None:
-    """해당 좌석의 활성 예약을 자동 취소"""
-    try:
-        now = datetime.now(KST).isoformat()
-        db_seat = _to_db_seat_num(seat_id)
-        result = _supabase.table("reservations") \
-            .update({"is_active": False, "end_time": now}) \
-            .eq("seat_number", db_seat) \
-            .eq("is_active", True) \
-            .execute()
-        if result.data:
-            print(f"  → [{seat_id}] 자동반납 완료 (예약 취소)")
-        else:
-            print(f"  → [{seat_id}] 활성 예약 없음")
-    except Exception as e:
-        print(f"  → [{seat_id}] 자동반납 실패: {e}")
+    """해당 좌석의 활성 예약을 자동 취소 (WSAEWOULDBLOCK 등 일시적 소켓 오류 재시도)"""
+    for attempt in range(3):
+        try:
+            now = datetime.now(KST).isoformat()
+            db_seat = _to_db_seat_num(seat_id)
+            result = _supabase.table("reservations") \
+                .update({"is_active": False, "end_time": now}) \
+                .eq("seat_number", db_seat) \
+                .eq("is_active", True) \
+                .execute()
+            if result.data:
+                print(f"  → [{seat_id}] 자동반납 완료 (예약 취소)")
+            else:
+                print(f"  → [{seat_id}] 활성 예약 없음")
+            return
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(1)
+            else:
+                print(f"  → [{seat_id}] 자동반납 실패: {e}")
 
 
 def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
