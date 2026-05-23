@@ -193,9 +193,13 @@ const MySeatPage = () => {
           <Button
             onClick={async () => {
               setLoading(true);
-              await checkoutSeat();
+              const { error } = await checkoutSeat();
               setLoading(false);
-              navigate('/main');
+              if (error) {
+                toast.error('퇴실 실패: ' + error);
+              } else {
+                navigate('/main');
+              }
             }}
             variant="destructive"
             className="w-full h-12 font-display font-semibold text-base"

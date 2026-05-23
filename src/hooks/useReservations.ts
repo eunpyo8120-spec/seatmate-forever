@@ -148,12 +148,13 @@ export const useReservations = ({ subscribe = true } = {}) => {
       return { error: error.message };
     }
 
-    debouncedFetchReservations();
+    // navigate 전에 상태 확정 — debounce 없이 직접 await
+    await fetchReservations();
     return { error: null };
   };
 
-  const checkoutSeat = async () => {
-    if (!userId) return;
+  const checkoutSeat = async (): Promise<{ error: string | null }> => {
+    if (!userId) return { error: '로그인이 필요합니다' };
 
     const { error } = await supabase
       .from('reservations')
@@ -163,10 +164,12 @@ export const useReservations = ({ subscribe = true } = {}) => {
 
     if (error) {
       console.error('Checkout failed:', error);
-      return;
+      return { error: error.message };
     }
 
-    debouncedFetchReservations();
+    // 퇴실 후 상태 즉시 확정
+    await fetchReservations();
+    return { error: null };
   };
 
   const extendSeat = async (): Promise<{ error: string | null }> => {

@@ -7,6 +7,7 @@ import { getFloorName } from '@/lib/seatLabel';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatStatusTable } from '@/components/SeatStatusTable';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -86,7 +87,12 @@ const MainPage = () => {
               <Button
                 variant="destructive"
                 className="flex-1 h-10 font-display text-sm"
-                onClick={checkoutSeat}
+                onClick={async () => {
+                  const { error } = await checkoutSeat();
+                  if (error) {
+                    toast.error('퇴실 실패: ' + error);
+                  }
+                }}
               >
                 퇴실하기
               </Button>
