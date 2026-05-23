@@ -68,6 +68,8 @@ DEFAULT_POLYGONS = {
 
 _latest_frame: Optional[np.ndarray] = None
 _frame_lock = threading.Lock()
+_capture_frame: Optional[np.ndarray] = None
+_capture_lock  = threading.Lock()
 _supabase: Optional[Client] = None
 _last_cleanup = 0.0        # 마지막 로그 정리 시각
 CLEANUP_INTERVAL = 3600.0  # 1시간마다 정리
@@ -118,6 +120,31 @@ def find_rtsp() -> Optional[cv2.VideoCapture]:
     cap.release()
     print("연결 실패.")
     return None
+
+
+def _run_capture(rtsp_url: str) -> None:
+    """캡처 전용 스레드 — RTSP 버퍼를 계속 비워 항상 최신 프레임만 유지"""
+    global _capture_frame, _latest_frame
+    while True:
+        cap = cv2.VideoCapture(rtsp_url)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        if not cap.isOpened():
+            print("[캡처] RTSP 연결 실패, 3초 후 재시도...")
+            time.sleep(3)
+            continue
+        print("[캡처] RTSP 연결 성공")
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("[캡처] 프레임 읽기 실패, 재연결...")
+                break
+            frame = cv2.resize(frame, (IMG_W, IMG_H))
+            with _capture_lock:
+                _capture_frame = frame
+            with _frame_lock:
+                _latest_frame = frame.copy()
+        cap.release()
+        time.sleep(1)
 
 
 
@@ -367,9 +394,14 @@ def main():
     threading.Thread(target=_start_frame_server, daemon=True).start()
     print("HTTP 서버: http://localhost:8000")
 
-    cap = find_rtsp()
-    if cap is None:
-        return
+    # 캡처 전용 스레드 시작 (메인 루프와 분리 — 항상 최신 프레임 유지)
+    threading.Thread(target=_run_capture, args=(RTSP_URL,), daemon=True).start()
+    print("첫 프레임 대기 중...")
+    while True:
+        with _capture_lock:
+            if _capture_frame is not None:
+                break
+        time.sleep(0.1)
 
     print(f"모니터링 시작 — {LOG_INTERVAL}초마다 저장, {CONFIRM_SEC}초 확정 지연")
     print("판단: 책상 물건 없음→자동반납 | 물건+사람→사용중 | 물건만→자리맡음")
@@ -383,21 +415,14 @@ def main():
     last_print = 0.0
 
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("프레임 읽기 실패. 3초 후 재연결...")
-            cap.release()
-            time.sleep(3)
-            cap = find_rtsp()
-            if cap is None:
-                break
-            continue
+        # 항상 최신 프레임만 가져옴 (버퍼 지연 없음)
+        with _capture_lock:
+            if _capture_frame is None:
+                time.sleep(0.05)
+                continue
+            frame = _capture_frame.copy()
 
-        frame = cv2.resize(frame, (IMG_W, IMG_H))
-        with _frame_lock:
-            _latest_frame = frame.copy()
-
-        det_results = det_model(frame, verbose=False)[0]
+        det_results = det_model(frame, imgsz=416, verbose=False)[0]
         frame_raw   = {seat: {"person": False, "items": False} for seat in SEATS}
         seat_labels = {seat: {"person": False, "items": []} for seat in SEATS}
 
@@ -482,7 +507,6 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
     cv2.destroyAllWindows()
     print("종료됨.")
 
