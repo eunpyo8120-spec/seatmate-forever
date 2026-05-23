@@ -8,7 +8,7 @@ import time
 from ultralytics import YOLO
 
 RTSP_CANDIDATES = [
-    "rtsp://tapo1234:123456788@10.112.80.85/stream1",
+    "rtsp://tapo1234:123456788@10.63.75.85/stream1",
     "rtsp://tapo1234:123456788@10.17.239.85/stream1",
     "rtsp://tapo1234:123456788@10.91.195.85/stream1",
 ]

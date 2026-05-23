@@ -455,20 +455,19 @@ def main():
         if now - last_print >= 1.0:
             last_print = now
             ts = time.strftime("%H:%M:%S")
-            parts = []
+            _label_map = {"occupied": "occupied", "reserved": "reserved", "auto_return": "available"}
+            print(f"[{ts}]")
             for s in SEATS:
-                p_str = "person" if seat_labels[s]["person"] else ""
-                i_str = ", ".join(seat_labels[s]["items"])
-                if p_str and i_str:
-                    detail = f"person+{i_str}"
-                elif p_str:
-                    detail = "person"
-                elif i_str:
-                    detail = i_str
+                has_p, has_i = seat_results[s]
+                status_str = _label_map[determine_status(has_p, has_i)]
+                detected = []
+                if seat_labels[s]["person"]:
+                    detected.append("person")
+                detected.extend(seat_labels[s]["items"])
+                if detected:
+                    print(f"  {s}: {status_str} ({', '.join(detected)})")
                 else:
-                    detail = "empty"
-                parts.append(f"{s}:{detail}")
-            print(f"[{ts}]  " + "  |  ".join(parts))
+                    print(f"  {s}: {status_str}")
 
         # 자동반납 타이머 체크
         for seat in SEATS:

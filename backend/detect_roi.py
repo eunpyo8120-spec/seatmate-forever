@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 BASE       = Path(__file__).parent
 CALIB_FILE = BASE / "calibration.npz"
-RTSP_URL   = "rtsp://tapo1234:123456788@10.112.80.85/stream1"
+RTSP_URL   = "rtsp://tapo1234:123456788@10.63.75.85/stream1"
 
 SEATS      = ["N23", "N22", "N25", "N27"]
 SEAT_COLORS = {

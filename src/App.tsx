@@ -8,7 +8,6 @@ import MainPage from "./pages/MainPage";
 import SeatsPage from "./pages/SeatsPage";
 import MySeatPage from "./pages/MySeatPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import AdminCalibratePage from "./pages/AdminCalibratePage";
 import NotFound from "./pages/NotFound";
 import { useAuth, useAuthContext, AuthContext } from "./hooks/useAuth";
 import { useReservations } from "./hooks/useReservations";
@@ -74,7 +73,6 @@ const App = () => (
                 <Route path="/seats/:floor" element={<ProtectedRoute><SeatsPage /></ProtectedRoute>} />
                 <Route path="/my-seat" element={<ProtectedRoute><MySeatPage /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-                <Route path="/admin/calibrate" element={<AdminRoute><AdminCalibratePage /></AdminRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ReservationSync>
