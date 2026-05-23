@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useReservations } from '@/hooks/useReservations';
-import { useSeatsContext } from '@/hooks/useSeats';
+import { useSeatsContext, type SeatRow } from '@/hooks/useSeats';
 import { BottomNav } from '@/components/BottomNav';
 import { MapPin, Clock, Plus, LogOut as LogOutIcon, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,44 @@ const STATUS_COLOR: Record<string, string> = {
   ghost: 'text-orange-600 bg-orange-50',
   managed: 'text-purple-600 bg-purple-50',
   lost_item: 'text-red-600 bg-red-50',
+};
+
+const SensorCard = ({ seatLabel, seats }: { seatLabel: string; seats: SeatRow[] }) => {
+  const seatRow = seats.find(s => s.seat_number === seatLabel);
+  return (
+    <div className="bg-card rounded-xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-3">
+        <Wifi className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-display font-semibold text-foreground">센서 감지 현황</span>
+      </div>
+      {seatRow ? (
+        <div className="space-y-2 text-sm font-body">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">좌석 상태</span>
+            <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${STATUS_COLOR[seatRow.status] ?? 'text-foreground bg-muted'}`}>
+              {STATUS_LABEL[seatRow.status] ?? seatRow.status}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">사람 감지</span>
+            <span>{seatRow.has_person ? '✅ 있음' : '❌ 없음'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">물건 감지</span>
+            <span>{seatRow.has_items ? '✅ 있음' : '❌ 없음'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">마지막 업데이트</span>
+            <span className="text-xs text-right">
+              {new Date(seatRow.last_updated).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm font-body text-muted-foreground">백엔드 미실행 — 감지 데이터 없음</p>
+      )}
+    </div>
+  );
 };
 
 const MySeatPage = () => {
@@ -131,44 +169,7 @@ const MySeatPage = () => {
           </div>
         </div>
 
-        {mySeat.floor === 'TEST' && (() => {
-          const seatLabel = getSeatLabel(mySeat.seatNumber);
-          const seatRow = seats.find(s => s.seat_number === seatLabel);
-          return (
-            <div className="bg-card rounded-xl p-5 border border-border">
-              <div className="flex items-center gap-2 mb-3">
-                <Wifi className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-display font-semibold text-foreground">센서 감지 현황</span>
-              </div>
-              {seatRow ? (
-                <div className="space-y-2 text-sm font-body">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">좌석 상태</span>
-                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${STATUS_COLOR[seatRow.status] ?? 'text-foreground bg-muted'}`}>
-                      {STATUS_LABEL[seatRow.status] ?? seatRow.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">사람 감지</span>
-                    <span>{seatRow.has_person ? '✅ 있음' : '❌ 없음'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">물건 감지</span>
-                    <span>{seatRow.has_items ? '✅ 있음' : '❌ 없음'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">마지막 업데이트</span>
-                    <span className="text-xs text-right">
-                      {new Date(seatRow.last_updated).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm font-body text-muted-foreground">백엔드 미실행 — 감지 데이터 없음</p>
-              )}
-            </div>
-          );
-        })()}
+        {mySeat.floor === 'TEST' && <SensorCard seatLabel={getSeatLabel(mySeat.seatNumber)} seats={seats} />}
 
         <div className="space-y-3">
           <Button

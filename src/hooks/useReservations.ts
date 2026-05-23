@@ -6,12 +6,13 @@ import type { SeatStatus } from '@/types/seat';
 
 export const useReservations = ({ subscribe = true } = {}) => {
   const { user } = useAuthContext();
+  const userId = user?.id ?? null;
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchReservationsRef = useRef<() => Promise<void>>(async () => {});
 
   const fetchReservations = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
 
     const { data, error } = await supabase
       .from('reservations')
@@ -42,7 +43,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
     data?.forEach(r => {
       const floor = r.floor;
       if (updatedStatuses[floor]) {
-        if (user && r.user_id === user.id) {
+        if (r.user_id === userId) {
           updatedStatuses[floor][r.seat_number] = 'mine';
           myReservation = r;
         } else {
@@ -72,7 +73,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
         expiryTimerRef.current = setTimeout(() => fetchReservationsRef.current(), delay + 1000);
       }
     }
-  }, [user]);
+  }, [userId]);
 
   // Keep ref pointing to latest fetchReservations (used by expiry timer)
   useEffect(() => {
@@ -105,12 +106,12 @@ export const useReservations = ({ subscribe = true } = {}) => {
   }, [fetchReservations, subscribe]);
 
   const reserveSeat = async (floor: string, seatNumber: number) => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!userId) return { error: 'Not authenticated' };
 
     const { data: existing } = await supabase
       .from('reservations')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .gt('end_time', new Date().toISOString())
       .maybeSingle();
@@ -121,7 +122,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
     await supabase
       .from('reservations')
       .update({ is_active: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .lt('end_time', new Date().toISOString());
 
@@ -129,7 +130,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
     const endTime = new Date(now.getTime() + 10 * 60 * 1000);
 
     const { error } = await supabase.from('reservations').insert({
-      user_id: user.id,
+      user_id: userId,
       floor,
       seat_number: seatNumber,
       start_time: now.toISOString(),
@@ -146,19 +147,19 @@ export const useReservations = ({ subscribe = true } = {}) => {
   };
 
   const checkoutSeat = async () => {
-    if (!user) return;
+    if (!userId) return;
 
     const { data: current } = await supabase
       .from('reservations')
       .select('seat_number, floor')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .single();
 
     const { error } = await supabase
       .from('reservations')
       .update({ is_active: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true);
 
     if (error) {
@@ -170,12 +171,12 @@ export const useReservations = ({ subscribe = true } = {}) => {
   };
 
   const extendSeat = async (): Promise<{ error: string | null }> => {
-    if (!user) return { error: '로그인이 필요합니다' };
+    if (!userId) return { error: '로그인이 필요합니다' };
 
     const { data: current } = await supabase
       .from('reservations')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_active', true)
       .single();
 
