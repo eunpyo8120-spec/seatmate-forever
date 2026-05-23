@@ -10,6 +10,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
   const channelName = useRef(`reservations-realtime-${Math.random()}`);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchReservationsRef = useRef<() => Promise<void>>(async () => {});
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchReservations = useCallback(async () => {
     if (!userId) return;
@@ -75,6 +76,12 @@ export const useReservations = ({ subscribe = true } = {}) => {
     }
   }, [userId]);
 
+  // 300ms debounce — 짧은 시간 내 중복 호출을 하나로 합침
+  const debouncedFetchReservations = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => fetchReservations(), 300);
+  }, [fetchReservations]);
+
   // Keep ref pointing to latest fetchReservations (used by expiry timer)
   useEffect(() => {
     fetchReservationsRef.current = fetchReservations;
@@ -92,18 +99,17 @@ export const useReservations = ({ subscribe = true } = {}) => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reservations' },
         () => {
-          fetchReservations();
+          debouncedFetchReservations();
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-      if (expiryTimerRef.current) {
-        clearTimeout(expiryTimerRef.current);
-      }
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [fetchReservations, subscribe]);
+  }, [fetchReservations, debouncedFetchReservations, subscribe]);
 
   const reserveSeat = async (floor: string, seatNumber: number) => {
     if (!userId) return { error: 'Not authenticated' };
@@ -142,19 +148,12 @@ export const useReservations = ({ subscribe = true } = {}) => {
       return { error: error.message };
     }
 
-    await fetchReservations();
+    debouncedFetchReservations();
     return { error: null };
   };
 
   const checkoutSeat = async () => {
     if (!userId) return;
-
-    const { data: current } = await supabase
-      .from('reservations')
-      .select('seat_number, floor')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .single();
 
     const { error } = await supabase
       .from('reservations')
@@ -167,7 +166,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
       return;
     }
 
-    await fetchReservations();
+    debouncedFetchReservations();
   };
 
   const extendSeat = async (): Promise<{ error: string | null }> => {
@@ -191,7 +190,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
 
     if (error) return { error: error.message };
 
-    await fetchReservations();
+    debouncedFetchReservations();
     return { error: null };
   };
 
@@ -208,7 +207,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
       return { error: error.message };
     }
 
-    await fetchReservations();
+    debouncedFetchReservations();
     return { error: null };
   };
 
