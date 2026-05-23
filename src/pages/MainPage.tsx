@@ -13,7 +13,8 @@ const MainPage = () => {
   const { userName, mySeat, seatStatuses } = useAppStore();
   const { signOut } = useAuthContext();
   const { checkoutSeat } = useReservations({ subscribe: false });
-  const { seats, loading: seatsLoading } = useSeatsContext();
+  const { seats: allSeats, loading: seatsLoading } = useSeatsContext();
+  const seats = allSeats.filter(s => /^[A-Z]/.test(s.seat_number));
   const navigate = useNavigate();
 
   const getAvailableCount = (floor: string) => {

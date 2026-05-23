@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 import { useAppStore } from '@/store/appStore';
@@ -36,7 +36,11 @@ const SeatsPage = () => {
 
   const currentFloor = floor || '2';
   const statuses = seatStatuses[currentFloor] || {};
-  const floorName = currentFloor === '2' ? '2층 1열람실' : currentFloor === '4' ? '4층 2열람실' : '4층 노상일열람실';
+  const floorName = getFloorName(currentFloor);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentFloor]);
 
   const handleSeatClick = (seatNum: number) => {
     if (currentFloor === 'TEST') {
