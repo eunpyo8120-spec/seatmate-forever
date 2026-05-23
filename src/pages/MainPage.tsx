@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/appStore';
 import { useAuthContext } from '@/hooks/useAuth';
 import { useReservations } from '@/hooks/useReservations';
 import { useSeatsContext } from '@/hooks/useSeats';
+import { getFloorName } from '@/lib/seatLabel';
 import { BottomNav } from '@/components/BottomNav';
 import { SeatStatusTable } from '@/components/SeatStatusTable';
 import { MapPin, Clock, LogOut, ChevronRight } from 'lucide-react';
@@ -70,7 +71,7 @@ const MainPage = () => {
                 <MapPin className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="font-display font-bold text-lg text-foreground">{mySeat.floor}층 열람실</p>
+                <p className="font-display font-bold text-lg text-foreground">{getFloorName(mySeat.floor)}</p>
                 <p className="text-sm font-body text-muted-foreground">{mySeat.seatNumber}번 좌석</p>
               </div>
             </div>

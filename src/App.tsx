@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -26,8 +26,9 @@ const ScrollToTop = () => {
 
 // 앱 전체에서 auth 상태를 한 번만 구독 — 페이지 전환 시 재구독 없음
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const auth = useAuth();
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+  const { user, loading, signOut } = useAuth();
+  const value = useMemo(() => ({ user, loading, signOut }), [user, loading, signOut]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 // 앱 전체에서 예약 구독을 한 번만 — 페이지 전환 시 재구독 없음

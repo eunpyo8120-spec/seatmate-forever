@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/store/appStore';
 import type { User } from '@supabase/supabase-js';
@@ -28,7 +28,8 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const u = session?.user ?? null;
-        setUser(u);
+        // ID 동일하면 레퍼런스 교체 방지 — TOKEN_REFRESHED 등으로 인한 불필요한 리렌더 차단
+        setUser(prev => (prev?.id === u?.id ? prev : u));
         if (u) {
           const studentId = u.user_metadata?.student_id || '';
           const isAdmin = studentId.startsWith('9999');
@@ -48,10 +49,10 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, [login, logout]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     logout();
-  };
+  }, [logout]);
 
   return { user, loading, signOut };
 };
