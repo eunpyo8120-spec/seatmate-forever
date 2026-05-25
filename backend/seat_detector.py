@@ -317,10 +317,12 @@ def cancel_reservation(seat_id: str) -> None:
                 print(f"  → [{seat_id}] 자동반납 실패: {e}")
 
 
-def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
+def send_logs(seat_results: Dict[str, Tuple[bool, bool]],
+              auto_return_snapshot: Dict[str, Optional[float]]) -> None:
     try:
         _cleanup_old_logs()
-        now = datetime.now(KST).isoformat()
+        now_ts  = time.time()
+        now_iso = datetime.now(KST).isoformat()
         reservations = _get_active_reservations()
         detection_rows, conflict_rows = [], []
 
@@ -328,7 +330,7 @@ def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
             status = determine_status(has_person, has_items)
             detection_rows.append({
                 "seat_id": seat_id, "has_person": has_person,
-                "has_items": has_items, "status": status, "detected_at": now,
+                "has_items": has_items, "status": status, "detected_at": now_iso,
             })
             reserved_by = reservations.get(seat_id)
             if reserved_by:
@@ -340,15 +342,31 @@ def send_logs(seat_results: Dict[str, Tuple[bool, bool]]) -> None:
             conflict_rows.append({
                 "seat_id": seat_id, "reserved_by": reserved_by,
                 "detected_person": has_person, "detected_items": has_items,
-                "conflict_type": ct, "checked_at": now,
+                "conflict_type": ct, "checked_at": now_iso,
             })
-            # DB seats.status: occupied→occupied, reserved→ghost, auto_return→available
-            db_status = {"occupied": "occupied", "reserved": "ghost",
-                         "auto_return": "available"}[status]
+            # DB seats.status 매핑:
+            #   occupied   → occupied  (사람 있음)
+            #   reserved   → reserved  (물건만 있음 — 자리맡음)
+            #   auto_return, 10초 미만 → ghost    (자리비움 유예)
+            #   auto_return, 10초 이상 → available (자동반납 완료)
+            if status == "occupied":
+                # 예약 있음: 이용중 / 예약 없음: 무단점유
+                db_status = "occupied" if reserved_by else "unauthorized"
+            elif status == "reserved":
+                # 예약 있음: 자리맡음 / 예약 없음: 자율관리위원회 대상
+                db_status = "reserved" if reserved_by else "managed"
+            else:  # auto_return
+                # 예약 있음: 자리비움 유예(ghost) → 10초 후 자동반납
+                # 예약 없음: 그냥 사용가능
+                if reserved_by:
+                    ar_since = auto_return_snapshot.get(seat_id)
+                    db_status = "ghost" if (ar_since is None or (now_ts - ar_since) < AUTO_RETURN_SEC) else "available"
+                else:
+                    db_status = "available"
             _supabase.table("seats").upsert({
                 "seat_number": seat_id,
                 "has_person": has_person, "has_items": has_items,
-                "status": db_status, "last_updated": now,
+                "status": db_status, "last_updated": now_iso,
             }, on_conflict="seat_number").execute()
 
         _supabase.table("detection_logs").insert(detection_rows).execute()
@@ -485,7 +503,11 @@ def main():
 
         if time.time() - last_log >= LOG_INTERVAL:
             last_log = time.time()
-            threading.Thread(target=send_logs, args=(dict(seat_results),), daemon=True).start()
+            threading.Thread(
+                target=send_logs,
+                args=(dict(seat_results), dict(_auto_return_since)),
+                daemon=True,
+            ).start()
 
         SHOW_LABELS = ITEM_LABELS | {"person"}
         annotated = frame.copy()

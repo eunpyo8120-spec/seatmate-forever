@@ -11,11 +11,13 @@ import { toast } from 'sonner';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
 
 const STATUS_LABEL: Record<string, string> = {
-  available: '사용가능',
-  occupied: '이용중',
-  ghost: '고스트',
-  managed: '관리중',
-  lost_item: '분실물',
+  available:    '사용가능',
+  occupied:     '이용중',
+  reserved:     '자리맡음',
+  ghost:        '자리비움',
+  managed:      '자율관리위원회',
+  unauthorized: '무단점유',
+  lost_item:    '분실물',
 };
 
 const STATUS_COLOR: Record<string, string> = {

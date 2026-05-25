@@ -64,8 +64,8 @@ export function useNotifications() {
           notifs.push({
             id: `ghost-${activeRes.id}`,
             type: 'warning',
-            title: '사석화 경고',
-            message: `${seatLabel} 좌석이 장시간 비어있습니다. 자동 퇴실 처리될 수 있습니다.`,
+            title: '자동반납 임박',
+            message: `${seatLabel} 좌석이 비어있습니다. 곧 자동 퇴실 처리될 수 있습니다.`,
             time: '지금',
             read: false,
           });

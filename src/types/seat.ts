@@ -1,4 +1,4 @@
-export type SeatStatus = 'available' | 'occupied' | 'mine' | 'disabled' | 'warning' | 'ghost' | 'managed' | 'lost_item';
+export type SeatStatus = 'available' | 'occupied' | 'mine' | 'disabled' | 'warning' | 'ghost' | 'reserved' | 'managed' | 'lost_item' | 'unauthorized';
 
 export interface Seat {
   id: number;

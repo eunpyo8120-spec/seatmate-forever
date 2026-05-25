@@ -203,9 +203,13 @@ const SeatsPage = () => {
               <div className="flex justify-between border-b border-border pb-1">
                 <span className="text-muted-foreground">상태</span>
                 <span className="font-semibold font-display">
-                  {seatDetail.status === 'available' ? '사용가능' :
-                   seatDetail.status === 'occupied' ? '이용중' :
-                   seatDetail.status === 'ghost' ? '고스트' : seatDetail.status}
+                  {seatDetail.status === 'available'    ? '사용가능' :
+                   seatDetail.status === 'occupied'     ? '이용중' :
+                   seatDetail.status === 'reserved'     ? '자리맡음' :
+                   seatDetail.status === 'ghost'        ? '자리비움' :
+                   seatDetail.status === 'managed'      ? '자율관리위원회' :
+                   seatDetail.status === 'unauthorized' ? '무단점유' :
+                   seatDetail.status === 'lost_item'    ? '분실물' : seatDetail.status}
                 </span>
               </div>
               <div className="flex justify-between border-b border-border pb-1">

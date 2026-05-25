@@ -16,9 +16,11 @@ const statusClasses: Record<SeatStatus, string> = {
   mine: 'seat-mine',
   disabled: 'seat-disabled',
   warning: 'seat-warning',
-  ghost: 'seat-warning',
+  ghost: 'bg-gray-100 text-gray-400 border border-gray-200',
+  reserved: 'seat-warning',
   managed: 'bg-blue-100 text-blue-700 border border-blue-300',
   lost_item: 'bg-orange-100 text-orange-700 border border-orange-300',
+  unauthorized: 'bg-red-100 text-red-700 border border-red-300',
 };
 
 export const SeatCell = ({ number, label, status, onClick, size = 'md', selected }: SeatCellProps) => {
@@ -39,9 +41,11 @@ export const SeatCell = ({ number, label, status, onClick, size = 'md', selected
         status === 'occupied' ? '사용중' :
         status === 'mine' ? '내 좌석' :
         status === 'warning' ? '확인필요' :
-        status === 'ghost' ? '고스트좌석' :
-        status === 'managed' ? '자율위원회관리' :
+        status === 'ghost' ? '자리비움' :
+        status === 'reserved' ? '자리맡음' :
+        status === 'managed' ? '자율관리위원회' :
         status === 'lost_item' ? '분실물처리' :
+        status === 'unauthorized' ? '무단점유' :
         '사용불가'
       }`}
     >
