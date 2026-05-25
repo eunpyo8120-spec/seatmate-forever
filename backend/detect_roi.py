@@ -1,5 +1,5 @@
-"""
-detect_roi.py - ROI 기반 좌석 객체인식 테스트 (Supabase 없음)
+﻿"""
+detect_roi.py - ROI 湲곕컲 醫뚯꽍 媛앹껜?몄떇 ?뚯뒪??(Supabase ?놁쓬)
 Usage: python detect_roi.py
 """
 
@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 BASE       = Path(__file__).parent
 CALIB_FILE = BASE / "calibration.npz"
-RTSP_URL   = "rtsp://tapo1234:123456788@10.63.75.85/stream1"
+RTSP_URL   = "rtsp://tapo1234:123456788@10.237.232.85/stream1"
 
 SEATS      = ["N23", "N22", "N25", "N27"]
 SEAT_COLORS = {
@@ -22,7 +22,7 @@ SEAT_COLORS = {
 }
 ITEM_LABELS  = {"laptop", "keyboard", "book", "cup", "backpack", "bag", "cell phone", "mouse", "bottle"}
 IMG_W, IMG_H = 960, 720
-CONFIRM_SEC  = 3.0   # 같은 상태 N초 유지해야 반영
+CONFIRM_SEC  = 3.0   # 媛숈? ?곹깭 N珥??좎??댁빞 諛섏쁺
 
 DEFAULT_POLYGONS = {
     "N23": np.array([[  0,   0],[480,   0],[480, 360],[  0, 360]], dtype=np.float32),
@@ -46,7 +46,7 @@ def load_calibration():
 
 
 def get_seat(px, py, polys):
-    """포인트가 속한 ROI 반환, ROI 밖이면 None"""
+    """?ъ씤?멸? ?랁븳 ROI 諛섑솚, ROI 諛뽰씠硫?None"""
     for seat, poly in polys.items():
         pts = poly.reshape(-1, 1, 2).astype(np.float32)
         if cv2.pointPolygonTest(pts, (float(px), float(py)), False) >= 0:
@@ -92,7 +92,7 @@ def main():
         return
     print("Connected! (press Q to quit)\n" + "-" * 50)
 
-    # 확정 지연 필터 상태
+    # ?뺤젙 吏???꾪꽣 ?곹깭
     filter_state = {
         s: {"buf": (False, False), "confirmed": (False, False), "since": time.time()}
         for s in SEATS
@@ -167,8 +167,7 @@ def main():
 
         SHOW_LABELS = ITEM_LABELS | {"person"}
         annotated = det.plot(conf=True, labels=True)
-        # 관련 없는 bbox 제거 — 빈 프레임에 직접 그리기
-        annotated = frame.copy()
+        # 愿???녿뒗 bbox ?쒓굅 ??鍮??꾨젅?꾩뿉 吏곸젒 洹몃━湲?        annotated = frame.copy()
         for box in det.boxes:
             cls   = int(box.cls[0])
             label = model.names[cls]

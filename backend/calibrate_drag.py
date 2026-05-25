@@ -1,4 +1,4 @@
-"""
+﻿"""
 calibrate_drag.py - 4-corner drag ROI calibration
 Usage : python calibrate_drag.py
 Order : N23 -> N22 -> N25 -> N27
@@ -16,7 +16,7 @@ load_dotenv()
 
 BASE       = Path(__file__).parent
 CALIB_FILE = BASE / "calibration.npz"
-RTSP_URL   = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.63.75.85/stream1")
+RTSP_URL   = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.237.232.85/stream1")
 
 SEATS_ORDER = ["N23", "N22", "N25", "N27"]
 SEAT_COLORS = {
@@ -173,7 +173,7 @@ def main():
 
     result = draw_scene(frame, done, list(done.keys())[-1],
                         done[list(done.keys())[-1]].tolist(), -1)
-    # 결과 미리보기
+    # 寃곌낵 誘몃━蹂닿린
     result = frame.copy()
     for s, poly in done.items():
         c       = SEAT_COLORS[s]
