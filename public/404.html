@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script>
+    // GitHub Pages SPA redirect: 새로고침/직접 URL 접근 시 index.html로 리다이렉트
+    sessionStorage.redirect = location.href;
+    location.replace(location.protocol + '//' + location.host + '/seatmate-forever/');
+  </script>
+</head>
+<body></body>
+</html>
