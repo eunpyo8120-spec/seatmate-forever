@@ -42,7 +42,7 @@ CALIB_FILE = BASE / "calibration.npz"
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.63.75.85/stream1")
+RTSP_URL     = os.getenv("RTSP_URL", "rtsp://tapo1234:123456788@10.237.232.85/stream1")
 
 SEATS        = ["N22", "N23", "N25", "N27"]
 # 책상 위 물건만 감지 (의자 위 소지품은 점유로 인정하지 않음)
