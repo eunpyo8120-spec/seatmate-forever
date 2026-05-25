@@ -180,7 +180,7 @@ export const useReservations = ({ subscribe = true } = {}) => {
       .select('*')
       .eq('user_id', userId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!current) return { error: '활성 예약이 없습니다' };
 

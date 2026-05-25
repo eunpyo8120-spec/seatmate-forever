@@ -175,12 +175,15 @@ const MySeatPage = () => {
           <Button
             onClick={async () => {
               setLoading(true);
-              const { error } = await extendSeat();
-              setLoading(false);
-              if (error) {
-                toast.error('연장 실패: ' + error);
-              } else {
-                toast.success('2시간 연장되었습니다.');
+              try {
+                const { error } = await extendSeat();
+                if (error) {
+                  toast.error('연장 실패: ' + error);
+                } else {
+                  toast.success('2시간 연장되었습니다.');
+                }
+              } finally {
+                setLoading(false);
               }
             }}
             variant="outline"
@@ -193,12 +196,15 @@ const MySeatPage = () => {
           <Button
             onClick={async () => {
               setLoading(true);
-              const { error } = await checkoutSeat();
-              setLoading(false);
-              if (error) {
-                toast.error('퇴실 실패: ' + error);
-              } else {
-                navigate('/main');
+              try {
+                const { error } = await checkoutSeat();
+                if (error) {
+                  toast.error('퇴실 실패: ' + error);
+                } else {
+                  navigate('/main');
+                }
+              } finally {
+                setLoading(false);
               }
             }}
             variant="destructive"
