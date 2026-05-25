@@ -9,24 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { getSeatLabel, getFloorName } from '@/lib/seatLabel';
-
-const STATUS_LABEL: Record<string, string> = {
-  available:    '사용가능',
-  occupied:     '이용중',
-  reserved:     '자리맡음',
-  ghost:        '자리비움',
-  managed:      '자율관리위원회',
-  unauthorized: '무단점유',
-  lost_item:    '분실물',
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  available: 'text-green-600 bg-green-50',
-  occupied: 'text-blue-600 bg-blue-50',
-  ghost: 'text-orange-600 bg-orange-50',
-  managed: 'text-purple-600 bg-purple-50',
-  lost_item: 'text-red-600 bg-red-50',
-};
+import { SEAT_STATUS_LABEL, SEAT_STATUS_CLASS } from '@/lib/seatStatus';
 
 const SensorCard = ({ seatLabel, seats }: { seatLabel: string; seats: SeatRow[] }) => {
   const seatRow = seats.find(s => s.seat_number === seatLabel);
@@ -40,8 +23,8 @@ const SensorCard = ({ seatLabel, seats }: { seatLabel: string; seats: SeatRow[] 
         <div className="space-y-2 text-sm font-body">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">좌석 상태</span>
-            <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${STATUS_COLOR[seatRow.status] ?? 'text-foreground bg-muted'}`}>
-              {STATUS_LABEL[seatRow.status] ?? seatRow.status}
+            <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${SEAT_STATUS_CLASS[seatRow.status] ?? 'text-foreground bg-muted'}`}>
+              {SEAT_STATUS_LABEL[seatRow.status] ?? seatRow.status}
             </span>
           </div>
           <div className="flex justify-between">

@@ -7,6 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { SeatRow } from '@/hooks/useSeats';
+import { SEAT_STATUS_LABEL, SEAT_STATUS_CLASS } from '@/lib/seatStatus';
 
 interface Props {
   seats: SeatRow[];
@@ -22,16 +23,6 @@ function relativeTime(iso: string): string {
   if (hours < 24) return `${hours}시간 전`;
   return `${Math.floor(hours / 24)}일 전`;
 }
-
-const STATUS_LABEL: Record<string, { label: string; className: string }> = {
-  available: { label: '사용가능', className: 'bg-green-100 text-green-700' },
-  occupied:  { label: '이용중',   className: 'bg-red-100 text-red-700' },
-  reserved:  { label: '자리맡음', className: 'bg-yellow-100 text-yellow-700' },
-  ghost:     { label: '자리비움', className: 'bg-gray-100 text-gray-500' },
-  managed:      { label: '자율관리위원회', className: 'bg-blue-100 text-blue-700' },
-  lost_item:    { label: '분실물',        className: 'bg-orange-100 text-orange-700' },
-  unauthorized: { label: '무단점유',      className: 'bg-red-100 text-red-700' },
-};
 
 export function SeatStatusTable({ seats, loading }: Props) {
   if (loading) {
@@ -64,7 +55,7 @@ export function SeatStatusTable({ seats, loading }: Props) {
         </TableHeader>
         <TableBody>
           {seats.map((seat) => {
-            const s = STATUS_LABEL[seat.status] ?? { label: seat.status, className: 'bg-muted text-muted-foreground' };
+            const s = { label: SEAT_STATUS_LABEL[seat.status] ?? seat.status, className: SEAT_STATUS_CLASS[seat.status] ?? 'bg-muted text-muted-foreground' };
             return (
               <TableRow key={seat.seat_number}>
                 <TableCell className="font-display font-bold text-sm">{seat.seat_number}</TableCell>
