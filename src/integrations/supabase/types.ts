@@ -14,278 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
-      detection_logs: {
-        Row: {
-          detected_at: string
-          has_items: boolean
-          has_person: boolean
-          id: string
-          seat_id: string
-          status: string
-        }
-        Insert: {
-          detected_at?: string
-          has_items?: boolean
-          has_person?: boolean
-          id?: string
-          seat_id: string
-          status: string
-        }
-        Update: {
-          detected_at?: string
-          has_items?: boolean
-          has_person?: boolean
-          id?: string
-          seat_id?: string
-          status?: string
-        }
-        Relationships: []
-      }
-      occupancy_conflict_logs: {
-        Row: {
-          checked_at: string
-          conflict_type: string
-          detected_items: boolean
-          detected_person: boolean
-          id: string
-          reserved_by: string | null
-          seat_id: string
-        }
-        Insert: {
-          checked_at?: string
-          conflict_type: string
-          detected_items?: boolean
-          detected_person?: boolean
-          id?: string
-          reserved_by?: string | null
-          seat_id: string
-        }
-        Update: {
-          checked_at?: string
-          conflict_type?: string
-          detected_items?: boolean
-          detected_person?: boolean
-          id?: string
-          reserved_by?: string | null
-          seat_id?: string
-        }
-        Relationships: []
-      }
-      OccupancyLogs: {
-        Row: {
-          created_at: string | null
-          event_type: string | null
-          id: string
-          seat_id: number
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          event_type?: string | null
-          id?: string
-          seat_id: number
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          event_type?: string | null
-          id?: string
-          seat_id?: number
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "OccupancyLogs_seat_id_fkey"
-            columns: ["seat_id"]
-            isOneToOne: false
-            referencedRelation: "seats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "OccupancyLogs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
-          created_at: string | null
-          department: string | null
+          created_at: string
           display_name: string | null
-          full_name: string | null
           id: string
           student_id: string
-          updated_at: string | null
-          user_id: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
-          department?: string | null
+          created_at?: string
           display_name?: string | null
-          full_name?: string | null
-          id: string
+          id?: string
           student_id: string
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
-          department?: string | null
+          created_at?: string
           display_name?: string | null
-          full_name?: string | null
           id?: string
           student_id?: string
-          updated_at?: string | null
-          user_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
       reservations: {
         Row: {
-          created_at: string | null
+          created_at: string
           end_time: string
           floor: string
           id: string
-          is_active: boolean | null
+          is_active: boolean
           seat_number: number
-          start_time: string | null
-          updated_at: string | null
+          start_time: string
+          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           end_time: string
           floor: string
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           seat_number: number
-          start_time?: string | null
-          updated_at?: string | null
+          start_time?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           end_time?: string
           floor?: string
           id?: string
-          is_active?: boolean | null
+          is_active?: boolean
           seat_number?: number
-          start_time?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      seat_roi_configs: {
-        Row: {
-          camera_id: string
-          id: number
-          points: Json
-          seat_label: string
-          updated_at: string
-        }
-        Insert: {
-          camera_id?: string
-          id?: number
-          points?: Json
-          seat_label: string
+          start_time?: string
           updated_at?: string
-        }
-        Update: {
-          camera_id?: string
-          id?: number
-          points?: Json
-          seat_label?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      seats: {
-        Row: {
-          has_items: boolean | null
-          has_person: boolean | null
-          id: number
-          last_updated: string | null
-          seat_number: string
-          status: string | null
-        }
-        Insert: {
-          has_items?: boolean | null
-          has_person?: boolean | null
-          id?: number
-          last_updated?: string | null
-          seat_number: string
-          status?: string | null
-        }
-        Update: {
-          has_items?: boolean | null
-          has_person?: boolean | null
-          id?: number
-          last_updated?: string | null
-          seat_number?: string
-          status?: string | null
-        }
-        Relationships: []
-      }
-      Settings: {
-        Row: {
-          key: string
-          value: number
-        }
-        Insert: {
-          key: string
-          value: number
-        }
-        Update: {
-          key?: string
-          value?: number
-        }
-        Relationships: []
-      }
-      users: {
-        Row: {
-          end_time: string | null
-          id: number
-          is_active: boolean | null
-          seat_id: number | null
-          start_time: string | null
-          user_id: string
-        }
-        Insert: {
-          end_time?: string | null
-          id?: number
-          is_active?: boolean | null
-          seat_id?: number | null
-          start_time?: string | null
           user_id?: string
         }
-        Update: {
-          end_time?: string | null
-          id?: number
-          is_active?: boolean | null
-          seat_id?: number | null
-          start_time?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_seat_id_fkey"
-            columns: ["seat_id"]
-            isOneToOne: false
-            referencedRelation: "seats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "users_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
